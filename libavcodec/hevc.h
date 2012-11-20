@@ -32,12 +32,16 @@
  * Enable to diverge from the spec when the reference encoder
  * does so.
  */
-#define DEBUG_TRACE1 1
-//#define header_printf printf
-//#define cabac_printf printf
+#define DEBUG_TRACE1 0
+#if 0
+#define header_printf printf
+#define cabac_printf printf
+#define check_cabac_printf
+#else
 #define header_printf
 #define cabac_printf
-
+#define check_cabac_printf
+#endif
 #define REFERENCE_ENCODER_QUIRKS 1
 
 /**
