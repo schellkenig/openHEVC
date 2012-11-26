@@ -191,6 +191,7 @@ typedef struct SPS {
 
     uint8_t long_term_ref_pics_present_flag;
     uint8_t sps_temporal_mvp_enabled_flag;
+    uint8_t sps_strong_intra_smoothing_enable_flag;
 
     uint8_t vui_parameters_present_flag;
     uint8_t sps_extension_flag;

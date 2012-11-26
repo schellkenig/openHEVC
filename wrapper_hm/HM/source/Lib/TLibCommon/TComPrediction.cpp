@@ -298,6 +298,7 @@ Void TComPrediction::xPredIntraAng(Int bitDepth, Int* pSrc, Int srcStride, Pel*&
           {
             refMainIndex        = l+deltaInt+1;
             pDst[k*dstStride+l] = (Pel) ( ((32-deltaFract)*refMain[refMainIndex]+deltaFract*refMain[refMainIndex+1]+16) >> 5 );
+              printf("%d %d %d\n",pDst[k*dstStride+l], refMain[refMainIndex],refMain[refMainIndex+1]);
           }
         }
         else

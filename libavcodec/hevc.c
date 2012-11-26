@@ -716,7 +716,7 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
             }
         }
     }
-
+    if(c_idx == 0){
 
     if (s->cu.cu_transquant_bypass_flag) {
         hevcdsp->transquant_bypass(dst, coeffs, stride, log2_trafo_size, bit_depth);
@@ -759,6 +759,7 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
             hevcdsp->transform_add[log2_trafo_size-2](dst, coeffs, stride, bit_depth);
         }
     }
+    }
     header_printf("read_ResidualCoding_end\n");
 }
 
@@ -771,6 +772,8 @@ static void hls_transform_unit(HEVCContext *s, int x0, int  y0, int xBase, int y
 #else
     header_printf("read_TransformUnit.start\n");
 #endif
+    if (log2_trafo_size == 5)
+        printf("");
     if (s->cu.pred_mode == MODE_INTRA) {
         s->hpc[0]->intra_pred(s, x0, y0, log2_trafo_size, 0);
         if (log2_trafo_size > 2) {
