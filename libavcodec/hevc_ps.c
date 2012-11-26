@@ -363,7 +363,8 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
     header_printf("          long_term_ref_pics_present_flag           u(1) : %d\n", sps->long_term_ref_pics_present_flag);
     sps->sps_temporal_mvp_enabled_flag   = get_bits1(gb);
     header_printf("          sps_temporal_mvp_enable_flag              u(1) : %d\n", sps->sps_temporal_mvp_enabled_flag);
-    header_printf("          sps_strong_intra_smoothing_enable_flag              u(1) : %d\n", get_bits1(gb));
+    sps->sps_strong_intra_smoothing_enable_flag = get_bits1(gb);
+    header_printf("          sps_strong_intra_smoothing_enable_flag              u(1) : %d\n", sps->sps_strong_intra_smoothing_enable_flag);
     header_printf("          vui_parameters_present_flag              u(1) : %d\n", get_bits1(gb));
 
     sps->sps_extension_flag = get_bits1(gb);
