@@ -44,6 +44,7 @@
 #endif // _MSC_VER > 1000
 
 #include "CommonDef.h"
+#include "TLibCommon/TComRom.h"
 
 //! \ingroup TLibCommon
 //! \{
@@ -64,7 +65,7 @@ public:
   Void  setStateAndMps( UChar ucState, UChar ucMPS) { m_ucState = (ucState << 1) + ucMPS; } ///< set state and MPS
   
   Void init ( Int qp, Int initValue );   ///< initialize state with initial probability
-  
+  Void init2 ( Int qp, Int initValue );   ///< initialize state with initial probability
   Void updateLPS ()
   {
     m_ucState = m_aucNextStateLPS[ m_ucState ];

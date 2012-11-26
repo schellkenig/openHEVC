@@ -826,11 +826,22 @@ void xTrMxN(Int bitDepth, Short *block,Short *coeff, Int iWidth, Int iHeight, UI
 *  \param iWidth input data (width of transform)
 *  \param iHeight input data (height of transform)
 */
-void xITrMxN(Int bitDepth, Short *coeff,Short *block, Int iWidth, Int iHeight, UInt uiMode)
+void xITrMxN(Int bitDepth, Short *coeff,Short *block, Int iWidth, Int iHeight, UInt uiMode, TextType eText)
 {
+#if DEBUG_TRACE_xIT_SPLITTER || DEBUG_TRACE_xIT_MERGER
+  int i;
+#endif
   Int shift_1st = SHIFT_INV_1ST;
   Int shift_2nd = SHIFT_INV_2ND - (bitDepth-8);
-
+#if DEBUG_TRACE_xIT_SPLITTER
+    fprintf(g_hTrace,"Splitter ACTION: split_%dx%d : %s\n", iWidth, iHeight, eText == TEXT_LUMA ? "Y" : eText == TEXT_CHROMA_U ? "U" : "V");
+    fprintf(g_hTrace,"--------------------------\n");
+    fprintf(g_hTrace,"sizeOfTU = %d\n", iHeight);
+    for(i = 0; i <= iWidth*iHeight - 1; i++) {
+      fprintf(g_hTrace,"coeff[%d]     = %d\n", i, coeff[i]);
+    }
+    fprintf(g_hTrace,"--------------------------\n");
+#endif
   Short tmp[ 64*64];
   if( iWidth == 4 && iHeight == 4)
   {
@@ -860,6 +871,16 @@ void xITrMxN(Int bitDepth, Short *coeff,Short *block, Int iWidth, Int iHeight, U
     partialButterflyInverse32(coeff,tmp,shift_1st,iWidth);
     partialButterflyInverse32(tmp,block,shift_2nd,iHeight);
   }
+#if DEBUG_TRACE_xIT_MERGER
+    fprintf(g_hTrace,"Merger ACTION: merge_%dx%d\n", iWidth, iHeight);
+    fprintf(g_hTrace,"------------------------\n");
+    fprintf(g_hTrace,"sizeOfTU = %d\n", iHeight;
+    for(i = 0; i <= , iWidth*iHeight - 1; i++) {
+      fprintf(g_hTrace,"res    = %d\n",coeff[i]);
+    }
+    fprintf(g_hTrace,"nbTransformUnit = \n");
+    fprintf(g_hTrace,"------------------------\n");
+#endif
 }
 
 #endif //MATRIX_MULT
@@ -1290,7 +1311,7 @@ Void TComTrQuant::invtransformNxN( Bool transQuantBypass, TextType eText, UInt u
   }
   else
   {
-    xIT(bitDepth, uiMode, m_plTempCoeff, rpcResidual, uiStride, uiWidth, uiHeight );
+    xIT(bitDepth, uiMode, m_plTempCoeff, rpcResidual, uiStride, uiWidth, uiHeight, eText );
   }
 }
 
@@ -1387,7 +1408,7 @@ Void TComTrQuant::xT(Int bitDepth, UInt uiMode, Pel* piBlkResi, UInt uiStride, I
  *  \param iSize transform size (iSize x iSize)
  *  \param uiMode is Intra Prediction mode used in Mode-Dependent DCT/DST only
  */
-Void TComTrQuant::xIT(Int bitDepth, UInt uiMode, Int* plCoef, Pel* pResidual, UInt uiStride, Int iWidth, Int iHeight )
+Void TComTrQuant::xIT(Int bitDepth, UInt uiMode, Int* plCoef, Pel* pResidual, UInt uiStride, Int iWidth, Int iHeight, TextType eText )
 {
 #if MATRIX_MULT  
   Int iSize = iWidth;
@@ -1401,7 +1422,7 @@ Void TComTrQuant::xIT(Int bitDepth, UInt uiMode, Int* plCoef, Pel* pResidual, UI
     {    
       coeff[j] = (Short)plCoef[j];
     }
-    xITrMxN(bitDepth, coeff, block, iWidth, iHeight, uiMode );
+    xITrMxN(bitDepth, coeff, block, iWidth, iHeight, uiMode, eText );
     {
       for ( j = 0; j < iHeight; j++ )
       {    
@@ -2078,6 +2099,10 @@ Int TComTrQuant::getSigCtxInc    (
                                   ,TextType                        textureType
                                   )
 {
+  //  fprintf( g_hTrace," get93314_ctxInc( %d, %d, %d, %d, %d)\n",
+  //      posX, posY, patternSigCtx, blockType, scanIdx);
+  //  fprintf( g_hTrace," get93314_ctxInc( %d, %d, %d, %d)\n",
+  //      posX, posY, blockType, scanIdx);
   const Int ctxIndMap[16] =
   {
     0, 1, 4, 5,
@@ -2392,6 +2417,7 @@ UInt TComTrQuant::getSigCoeffGroupCtxInc  ( const UInt*               uiSigCoeff
                                            const UInt                      scanIdx,
                                            Int width, Int height)
 {
+  //  fprintf( g_hTrace," get93313_ctxInc(%d, %d, %d)\n",uiCGPosX, uiCGPosY, height);
   UInt uiRight = 0;
   UInt uiLower = 0;
 

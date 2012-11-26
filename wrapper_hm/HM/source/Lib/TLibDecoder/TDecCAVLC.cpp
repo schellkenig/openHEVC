@@ -42,7 +42,12 @@
 //! \ingroup TLibDecoder
 //! \{
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
+
+Void  xTraceVPSHeader (TComVPS *pVPS)
+{
+  fprintf( g_hTrace, "=========== Video Parameter Set ID:   ===========\n");
+}
 
 Void  xTraceSPSHeader (TComSPS *pSPS)
 {
@@ -207,7 +212,7 @@ inline Void copySaoOneLcuParam(SaoLcuParam* dst,  SaoLcuParam* src)
 
 Void TDecCavlc::parsePPS(TComPPS* pcPPS)
 {
-#if ENC_DEC_TRACE  
+#if DEBUG_HEADER
   xTracePPSHeader (pcPPS);
 #endif
   UInt  uiCode;
@@ -218,7 +223,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
   READ_UVLC( uiCode, "seq_parameter_set_id");                      pcPPS->setSPSId (uiCode);
 #if DEPENDENT_SLICE_SEGMENT_FLAGS
 #if DEPENDENT_SLICES
-  READ_FLAG( uiCode, "dependent_slices_enabled_flag"    );    pcPPS->setDependentSliceEnabledFlag   ( uiCode == 1 );
+  READ_FLAG( uiCode, "dependent_slice_segments_enabled_flag"    );    pcPPS->setDependentSliceEnabledFlag   ( uiCode == 1 );
 #endif
 #endif
   READ_FLAG ( uiCode, "sign_data_hiding_flag" ); pcPPS->setSignHideFlag( uiCode );
@@ -269,7 +274,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
   pcPPS->setTransquantBypassEnableFlag(uiCode ? true : false);
 #if !DEPENDENT_SLICE_SEGMENT_FLAGS
 #if DEPENDENT_SLICES
-  READ_FLAG( uiCode, "dependent_slices_enabled_flag"    );    pcPPS->setDependentSliceEnabledFlag   ( uiCode == 1 );
+  READ_FLAG( uiCode, "dependent_slice_segments_enabled_flag"    );    pcPPS->setDependentSliceEnabledFlag   ( uiCode == 1 );
 #endif
 #endif
   READ_FLAG( uiCode, "tiles_enabled_flag"               );    pcPPS->setTilesEnabledFlag            ( uiCode == 1 );
@@ -345,7 +350,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
 
 Void  TDecCavlc::parseVUI(TComVUI* pcVUI, TComSPS *pcSPS)
 {
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   fprintf( g_hTrace, "----------- vui_parameters -----------\n");
 #endif
   UInt  uiCode;
@@ -458,12 +463,12 @@ Void  TDecCavlc::parseVUI(TComVUI* pcVUI, TComSPS *pcSPS)
 
 Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 {
-#if ENC_DEC_TRACE  
+#if DEBUG_HEADER
   xTraceSPSHeader (pcSPS);
 #endif
 
   UInt  uiCode;
-  READ_CODE( 4,  uiCode, "video_parameter_set_id");              pcSPS->setVPSId        ( uiCode );
+  READ_CODE( 4,  uiCode, "vps_id");              pcSPS->setVPSId        ( uiCode );
   READ_CODE( 3,  uiCode, "sps_max_sub_layers_minus1" );          pcSPS->setMaxTLayers   ( uiCode+1 );
   READ_FLAG(     uiCode, "sps_reserved_zero_bit");               assert(uiCode == 0);
   parsePTL(pcSPS->getPTL(), 1, pcSPS->getMaxTLayers() - 1);
@@ -564,7 +569,7 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
       parseScalingList( pcSPS->getScalingList() );
     }
   }
-  READ_FLAG( uiCode, "asymmetric_motion_partitions_enabled_flag" ); pcSPS->setUseAMP( uiCode );
+  READ_FLAG( uiCode, "amp_enabled_flag" ); pcSPS->setUseAMP( uiCode );
   READ_FLAG( uiCode, "sample_adaptive_offset_enabled_flag" );       pcSPS->setUseSAO ( uiCode ? true : false );
   if( pcSPS->getUsePCM() )
   {
@@ -623,7 +628,9 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 Void TDecCavlc::parseVPS(TComVPS* pcVPS)
 {
   UInt  uiCode;
-  
+#if DEBUG_HEADER
+  xTraceVPSHeader(pcVPS);
+#endif
   READ_CODE( 4,  uiCode,  "video_parameter_set_id" );             pcVPS->setVPSId( uiCode );
   READ_FLAG(     uiCode,  "vps_temporal_id_nesting_flag" );       pcVPS->setTemporalNestingFlag( uiCode ? true:false );
   READ_CODE( 2,  uiCode,  "vps_reserved_zero_2bits" );            assert(uiCode == 0);
@@ -650,7 +657,7 @@ Void TDecCavlc::parseSliceHeader (TComSlice*& rpcSlice, ParameterSetManagerDecod
   UInt  uiCode;
   Int   iCode;
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   xTraceSliceHeader(rpcSlice);
 #endif
   TComPPS* pps = NULL;
@@ -911,7 +918,7 @@ Void TDecCavlc::parseSliceHeader (TComSlice*& rpcSlice, ParameterSetManagerDecod
     {
       if (rpcSlice->getSPS()->getTMVPFlagsPresent())
       {
-        READ_FLAG( uiCode, "enable_temporal_mvp_flag" );
+        READ_FLAG( uiCode, "temporal_mvp_enable_flag" );
         rpcSlice->setEnableTMVPFlag(uiCode); 
       }
       else
@@ -1254,14 +1261,14 @@ Void TDecCavlc::parsePTL( TComPTL *rpcPTL, Bool profilePresentFlag, Int maxNumSu
 Void TDecCavlc::parseProfileTier(ProfileTierLevel *ptl)
 {
   UInt uiCode;
-  READ_CODE(2 , uiCode, "XXX_profile_space[]");   ptl->setProfileSpace(uiCode);
-  READ_FLAG(    uiCode, "XXX_tier_flag[]"    );   ptl->setTierFlag    (uiCode ? 1 : 0);
-  READ_CODE(5 , uiCode, "XXX_profile_idc[]"  );   ptl->setProfileIdc  (uiCode);
+  READ_CODE(2 , uiCode, "general_profile_space");   ptl->setProfileSpace(uiCode);
+  READ_FLAG(    uiCode, "general_tier_flag"    );   ptl->setTierFlag    (uiCode ? 1 : 0);
+  READ_CODE(5 , uiCode, "general_profile_idc"  );   ptl->setProfileIdc  (uiCode);
   for(Int j = 0; j < 32; j++)
   {
-    READ_FLAG(  uiCode, "XXX_profile_compatibility_flag[][j]");   ptl->setProfileCompatibilityFlag(j, uiCode ? 1 : 0);
+    READ_FLAG(  uiCode, "general_profile_compatibility_flag[i]");   ptl->setProfileCompatibilityFlag(j, uiCode ? 1 : 0);
   }
-  READ_CODE(16, uiCode, "XXX_reserved_zero_16bits[]");  assert( uiCode == 0 );  
+  READ_CODE(16, uiCode, "general_reserved_zero_16bits");  assert( uiCode == 0 );
 }
 Void TDecCavlc::parseTerminatingBit( UInt& ruiBit )
 {

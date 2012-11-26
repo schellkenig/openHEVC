@@ -123,10 +123,13 @@ Void TDecSlice::decompressSlice(TComInputBitstream* pcBitstream, TComInputBitstr
 #if ENC_DEC_TRACE
   g_bJustDoIt = g_bEncDecTraceEnable;
 #endif
+/*
   DTRACE_CABAC_VL( g_nSymbolCounter++ );
   DTRACE_CABAC_T( "\tPOC: " );
   DTRACE_CABAC_V( rpcPic->getPOC() );
   DTRACE_CABAC_T( "\n" );
+*/
+  fprintf( g_hTrace,"\tPOC: %d\n",rpcPic->getPOC());
 
 #if ENC_DEC_TRACE
   g_bJustDoIt = g_bEncDecTraceDisable;

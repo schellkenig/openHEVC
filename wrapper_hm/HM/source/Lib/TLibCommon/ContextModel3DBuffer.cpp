@@ -75,7 +75,15 @@ Void ContextModel3DBuffer::initBuffer( SliceType sliceType, Int qp, UChar* ctxMo
     m_contextModel[ n ].setBinsCoded( 0 );
   }
 }
-
+Void ContextModel3DBuffer::initBuffer2( SliceType sliceType, Int qp, UChar* ctxModel )
+{
+  ctxModel += sliceType * m_sizeXYZ;
+  for ( Int n = 0; n < m_sizeXYZ; n++ )
+  {
+    m_contextModel[ n ].init2( qp, ctxModel[ n ] );
+    m_contextModel[ n ].setBinsCoded( 0 );
+  }
+}
 /**
  * Calculate the cost of choosing a probability table based on the current probability of CABAC at encoder
  *
