@@ -773,8 +773,6 @@ static void hls_transform_unit(HEVCContext *s, int x0, int  y0, int xBase, int y
 #else
     cabac_printf("read_TransformUnit.start\n");
 #endif
-    if (log2_trafo_size == 5)
-        printf("");
     if (s->cu.pred_mode == MODE_INTRA) {
         s->hpc[0]->intra_pred(s, x0, y0, log2_trafo_size, 0);
         if (log2_trafo_size > 2) {

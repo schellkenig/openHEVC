@@ -55,6 +55,8 @@ static void FUNC(transform_skip)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t _stri
     int size = 1 << log2_size;
 #if REFERENCE_ENCODER_QUIRKS
     int shift = 15 - bit_depth - log2_size;
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", size, size);
+
     if (shift > 0) {
         int offset = 1 << (shift - 1);
         for (y = 0; y < size; y++) {
@@ -269,6 +271,7 @@ static void FUNC(transform_16x16_add)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t 
     int shift = 7;
     int add = 1 << (shift - 1);
     int16_t *src = coeffs;
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", 16, 16);
 
     for (i = 0; i < 16; i++) {
         TR_16_1(src, src);
@@ -292,6 +295,7 @@ static void FUNC(transform_32x32_add)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t 
     int shift = 7;
     int add = 1 << (shift - 1);
     int16_t *src = coeffs;
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", 32, 32);
 
     for (i = 0; i < 32; i++) {
         TR_32_1(src, src);
