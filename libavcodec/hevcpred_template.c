@@ -157,13 +157,21 @@ static void FUNCC(intra_pred)(HEVCContext *s, int x0, int y0, int log2_size, int
 #undef EXTEND_UP
 #undef EXTEND_DOWN
 #undef MIN_TB_ADDR_ZS
-    if (s->sps->sps_strong_intra_smoothing_enable_flag == 1 && (1 << log2_size >=32)) {
-        av_log(s->avctx, AV_LOG_ERROR, "TODO: sps_strong_intra_smoothing_enable_flag\n");
-    } else {
-        if (c_idx == 0 && mode != INTRA_DC && size != 4) {
-            int intra_hor_ver_dist_thresh[] = { 7, 1, 0 };
-            int min_dist_vert_hor = FFMIN(FFABS((int)mode-26), FFABS((int)mode-10));
-            if (min_dist_vert_hor > intra_hor_ver_dist_thresh[log2_size-3]) {
+    if (c_idx == 0 && mode != INTRA_DC && size != 4) {
+        int intra_hor_ver_dist_thresh[] = { 7, 1, 0 };
+        int min_dist_vert_hor = FFMIN(FFABS((int)mode-26), FFABS((int)mode-10));
+        int thresold = 1 << (s->sps->bit_depth[0] - 5);
+        if (min_dist_vert_hor > intra_hor_ver_dist_thresh[log2_size-3]) {
+            if (s->sps->sps_strong_intra_smoothing_enable_flag && log2_size == 5 &&
+                FFABS(top[-1] + top[63] - 2 * top[31]) < thresold &&
+                FFABS(left[-1] + left[63] - 2 * left[31]) < thresold) {
+                for (i = 0; i < 63; i++) {
+                    top[i] = top[-1] + (i + 1) * ((top[63] - top[-1] + 32) >> 6);
+                }
+                for (i = 0; i < 63; i++) {
+                    left[i] = left[-1] + (i + 1) * ((left[63] - left[-1] + 32) >> 6);
+                }
+            } else {
                 filtered_left[2*size-1] = left[2*size-1];
                 filtered_top[2*size-1]  = top[2*size-1];
                 for (i = 2*size-2; i >= 0; i--) {
@@ -173,11 +181,13 @@ static void FUNCC(intra_pred)(HEVCContext *s, int x0, int y0, int log2_size, int
                 for (i = 2*size-2; i >= 0; i--) {
                     filtered_top[i] = (top[i+1] + 2*top[i] + top[i-1] + 2) >> 2;
                 }
+                
                 left = filtered_left;
                 top = filtered_top;
             }
         }
     }
+
     switch(mode) {
     case INTRA_PLANAR:
         s->hpc[c_idx]->pred_planar((uint8_t*)src, (uint8_t*)top, (uint8_t*)left, stride, log2_size);
@@ -277,7 +287,6 @@ static void FUNCC(pred_angular)(uint8_t *_src, const uint8_t *_top, const uint8_
             int fact = ((y + 1) * angle) & 31;
             for (x = 0; x < size; x++) {
                 POS(x, y) = ((32 - fact) * ref[x + idx + 1] + fact * ref[x + idx + 2] + 16) >> 5;
-                dsp_printf("%d %d %d\n",POS(x, y),ref[x + idx + 1], ref[x + idx + 2]);
             }
         }
         if (mode == 26 && c_idx == 0) {
