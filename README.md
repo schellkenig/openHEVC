@@ -28,3 +28,5 @@ TODO
 - add reconstructed mv
 - add deblocking filter
 - add SAO from libav/smarter
+- check if we have to initialize the array such as memset(s->rc.significant_coeff_group_flag, 0, 9*9);
+- check if the size of the array has to be [9] [9] for significant_coeff_group_flag 
