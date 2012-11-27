@@ -23,6 +23,7 @@
 #include "libavutil/pixdesc.h"
 #include "bit_depth_template.c"
 #include "hevcpred.h"
+#include "hevc.h"
 
 #define POS(x, y) src[(x) + stride * (y)]
 
@@ -276,7 +277,7 @@ static void FUNCC(pred_angular)(uint8_t *_src, const uint8_t *_top, const uint8_
             int fact = ((y + 1) * angle) & 31;
             for (x = 0; x < size; x++) {
                 POS(x, y) = ((32 - fact) * ref[x + idx + 1] + fact * ref[x + idx + 2] + 16) >> 5;
-                printf("%d %d %d\n",POS(x, y),ref[x + idx + 1], ref[x + idx + 2]);
+                dsp_printf("%d %d %d\n",POS(x, y),ref[x + idx + 1], ref[x + idx + 2]);
             }
         }
         if (mode == 26 && c_idx == 0) {

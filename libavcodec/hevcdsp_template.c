@@ -25,10 +25,11 @@
 #include "bit_depth_template.c"
 #include "hevcdata.h"
 #include "hevcdsp.h"
+#include "hevc.h"
 
 #define SET(dst, x) (dst) = (x)
 #define SCALE(dst, x) (dst) = av_clip_int16_c(((x) + add) >> shift)
-#define ADD_AND_SCALE(dst, x) printf("sample %d pred %d res %d\n", av_clip_uintp2((dst) + av_clip_int16_c(((x) + add) >> shift), bit_depth), dst, av_clip_int16_c(((x) + add) >> shift));(dst) = av_clip_uintp2((dst) + av_clip_int16_c(((x) + add) >> shift), bit_depth)
+#define ADD_AND_SCALE(dst, x) dsp_printf("sample %d pred %d res %d\n", av_clip_uintp2((dst) + av_clip_int16_c(((x) + add) >> shift), bit_depth), dst, av_clip_int16_c(((x) + add) >> shift));(dst) = av_clip_uintp2((dst) + av_clip_int16_c(((x) + add) >> shift), bit_depth)
 
 static void FUNC(transquant_bypass)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t _stride, int log2_size, int bit_depth)
 {
@@ -58,7 +59,7 @@ static void FUNC(transform_skip)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t _stri
         int offset = 1 << (shift - 1);
         for (y = 0; y < size; y++) {
             for (x = 0; x < size; x++) {
-                printf("sample %d pred %d res %d\n",dst[x]+((coeffs[y * size + x] + offset) >> shift),dst[x],(coeffs[y * size + x] + offset) >> shift);
+                dsp_printf("sample %d pred %d res %d\n",dst[x]+((coeffs[y * size + x] + offset) >> shift),dst[x],(coeffs[y * size + x] + offset) >> shift);
                 dst[x] += (coeffs[y * size + x] + offset) >> shift;
             }
             dst += stride;
@@ -113,7 +114,7 @@ assign(dst[3*step], 55 * c0 + 29 * c2 - c3);                            \
     int shift = 7;
     int add = 1 << (shift - 1);
     int16_t *src = coeffs;
-    printf("***** uiWidth %d uiHeight %d ***\n", 4, 4);
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", 4, 4);
 
     for (i = 0; i < 4; i++) {
         TR_4x4_LUMA(src, src, 4, SCALE);
@@ -158,7 +159,7 @@ static void FUNC(transform_4x4_add)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t _s
     int shift = 7;
     int add = 1 << (shift - 1);
     int16_t *src = coeffs;
-    printf("***** uiWidth %d uiHeight %d ***\n", 4, 4);
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", 4, 4);
 
     for (i = 0; i < 4; i++) {
         TR_4_1(src, src);
@@ -244,7 +245,7 @@ static void FUNC(transform_8x8_add)(uint8_t *_dst, int16_t *coeffs, ptrdiff_t _s
     int shift = 7;
     int add = 1 << (shift - 1);
     int16_t *src = coeffs;
-    printf("***** uiWidth %d uiHeight %d ***\n", 8, 8);
+    dsp_printf("***** uiWidth %d uiHeight %d ***\n", 8, 8);
 
     for (i = 0; i < 8; i++) {
         TR_8_1(src, src);

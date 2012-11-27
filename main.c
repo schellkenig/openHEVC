@@ -65,7 +65,7 @@ static void video_decode_example(const char *filename)
     
     av_init_packet(&avpkt);
     
-    printf("Video decoding\n");
+//    printf("Video decoding\n");
     
     codec = avcodec_find_decoder(AV_CODEC_ID_HEVC);
     if (!codec) {
@@ -119,7 +119,7 @@ static void video_decode_example(const char *filename)
             exit(1);
         }
         if (got_picture) {
-            printf("saving frame %3d\n", frame);
+//            printf("saving frame %3d\n", frame);
             fflush(stdout);
             if (init == 1) Init_SDL((picture->linesize[0] - c->width)/2, c->width, c->height);
             init=0;

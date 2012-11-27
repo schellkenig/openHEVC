@@ -42,11 +42,11 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
     ShortTermRPS *rps = &sps->short_term_rps_list[idx];
     ShortTermRPS *rps_rIdx;
 
-    if (idx!=0)
+    if (idx!=0) {
         rps->inter_ref_pic_set_prediction_flag = get_bits1(gb);
-    else
+        header_printf("          inter_ref_pic_set_prediction_flag               u(1) : %d\n", rps->inter_ref_pic_set_prediction_flag);
+    } else
         rps->inter_ref_pic_set_prediction_flag=0;
-    header_printf("          inter_ref_pic_set_prediction_flag               u(1) : %d\n", rps->inter_ref_pic_set_prediction_flag);
     if (rps->inter_ref_pic_set_prediction_flag) {
     	if( idx == sps->num_short_term_ref_pic_sets ) {
     	    delta_idx = get_ue_golomb(gb) + 1;
@@ -115,7 +115,7 @@ static void decode_profile_tier_level(HEVCContext *s, PTL *ptl,
         header_printf("          general_profile_idc                      u(5) : %d\n", ptl->general_profile_idc);
         for (i = 0; i < 32; i++) {
             ptl->general_profile_compatibility_flag[i] = get_bits1(gb);
-            header_printf("          general_profile_compatibility_flag[][j]  u(1) : %d\n", ptl->general_profile_compatibility_flag[i]);
+            header_printf("          general_profile_compatibility_flag[i]    u(1) : %d\n", ptl->general_profile_compatibility_flag[i]);
             
         }
         skip_bits(gb, 16); // general_reserved_zero_16bits
@@ -163,16 +163,19 @@ int ff_hevc_decode_nal_vps(HEVCContext *s)
     if (!vps)
         return -1;
     vps_id = get_bits(gb, 4) + 1;
-    header_printf("          vps_id                                   u(4) : %d\n", vps_id);
+    header_printf("          video_parameter_set_id                   u(4) : %d\n", vps_id-1);
     if (vps_id >= MAX_VPS_COUNT) {
         av_log(s->avctx, AV_LOG_ERROR, "VPS id out of range: %d\n", vps_id);
         goto err;
     }
     vps->vps_temporal_id_nesting_flag = get_bits(gb, 1);
     header_printf("          vps_temporal_id_nesting_flag             u(1) : %d\n", vps->vps_temporal_id_nesting_flag);
-    skip_bits(gb, 2 + 6); // vps_reserved_zero_2bits + vps_reserved_zero_6bits
+    i = get_bits(gb, 2);
+    header_printf("          vps_reserved_zero_2bits                  u(2) : %d\n", i);
+    i = get_bits(gb, 6);
+    header_printf("          vps_reserved_zero_6bits                  u(6) : %d\n", i);
     vps->vps_max_sub_layers = get_bits(gb, 3) + 1;
-    header_printf("          vps_max_sub_layers                       u(3) : %d\n", vps->vps_max_sub_layers);
+    header_printf("          vps_max_sub_layers_minus1                u(3) : %d\n", vps->vps_max_sub_layers-1);
     if (vps->vps_max_sub_layers > MAX_SUB_LAYERS) {
         av_log(s->avctx, AV_LOG_ERROR, "vps_max_sub_layers out of range: %d\n",
                vps->vps_max_sub_layers);
@@ -181,19 +184,20 @@ int ff_hevc_decode_nal_vps(HEVCContext *s)
     
     decode_profile_tier_level(s, &vps->ptl, 1, vps->vps_max_sub_layers);
     
-    skip_bits(gb, 12); // vps_reserved_zero_12bits
+    i = get_bits(gb, 12);
+    header_printf("          vps_reserved_zero_12bits                 u(12) : %d\n", i);
     
     for (i = 0; i < vps->vps_max_sub_layers; i++) {
         vps->vps_max_dec_pic_buffering[i] = get_ue_golomb(gb);
-        header_printf("          vps_max_dec_pic_buffering[i]             ue(v) : %d\n", vps->vps_max_dec_pic_buffering[i]);
+        header_printf("          vps_max_dec_pic_buffering[i]             u(v) : %d\n", vps->vps_max_dec_pic_buffering[i]);
         vps->vps_num_reorder_pics[i] = get_ue_golomb(gb);
-        header_printf("          vps_num_reorder_pics[i]                  ue(v) : %d\n", vps->vps_num_reorder_pics[i]);
+        header_printf("          vps_num_reorder_pics[i]                  u(v) : %d\n", vps->vps_num_reorder_pics[i]);
         vps->vps_max_latency_increase[i] = get_ue_golomb(gb);
-        header_printf("          vps_max_latency_increase[i]              ue(v) : %d\n", vps->vps_max_latency_increase[i]);
+        header_printf("          vps_max_latency_increase[i]              u(v) : %d\n", vps->vps_max_latency_increase[i]);
     }
 
     vps->vps_num_hrd_parameters = get_ue_golomb(gb);
-    header_printf("          vps_num_hrd_parameters                   ue(v) : %d\n", vps->vps_num_hrd_parameters);
+    header_printf("          vps_num_hrd_parameters                   u(v) : %d\n", vps->vps_num_hrd_parameters);
     if (vps->vps_num_hrd_parameters != 0) {
         av_log_missing_feature(s->avctx, "support for vps_num_hrd_parameters != 0", 0);
         av_free(vps);
@@ -236,13 +240,14 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
     }
     
     sps->sps_max_sub_layers = get_bits(gb, 3) + 1;
-    header_printf("          sps_max_sub_layers                       u(3) : %d\n", sps->sps_max_sub_layers);
+    header_printf("          sps_max_sub_layers_minus1                u(3) : %d\n", sps->sps_max_sub_layers-1);
     if (sps->sps_max_sub_layers > MAX_SUB_LAYERS) {
         av_log(s->avctx, AV_LOG_ERROR, "vps_max_sub_layers out of range: %d\n",
                sps->sps_max_sub_layers);
         goto err;
     }
-    skip_bits(gb, 1); // sps_reserved_zero_bit
+    i = get_bits(gb, 1);
+    header_printf("          sps_reserved_zero_bit                    u(1) : %d\n", i);
     
     decode_profile_tier_level(s, &sps->ptl, 1, sps->sps_max_sub_layers);
 
@@ -360,15 +365,15 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
     }
 
     sps->long_term_ref_pics_present_flag = get_bits1(gb);
-    header_printf("          long_term_ref_pics_present_flag           u(1) : %d\n", sps->long_term_ref_pics_present_flag);
+    header_printf("          long_term_ref_pics_present_flag          u(1) : %d\n", sps->long_term_ref_pics_present_flag);
     sps->sps_temporal_mvp_enabled_flag   = get_bits1(gb);
-    header_printf("          sps_temporal_mvp_enable_flag              u(1) : %d\n", sps->sps_temporal_mvp_enabled_flag);
+    header_printf("          sps_temporal_mvp_enable_flag             u(1) : %d\n", sps->sps_temporal_mvp_enabled_flag);
     sps->sps_strong_intra_smoothing_enable_flag = get_bits1(gb);
-    header_printf("          sps_strong_intra_smoothing_enable_flag              u(1) : %d\n", sps->sps_strong_intra_smoothing_enable_flag);
+    header_printf("          sps_strong_intra_smoothing_enable_flag   u(1) : %d\n", sps->sps_strong_intra_smoothing_enable_flag);
     header_printf("          vui_parameters_present_flag              u(1) : %d\n", get_bits1(gb));
 
     sps->sps_extension_flag = get_bits1(gb);
-    header_printf("          sps_extension_flag                        u(1) : %d\n", sps->sps_extension_flag);
+    header_printf("          sps_extension_flag                       u(1) : %d\n", sps->sps_extension_flag);
 
     // Inferred parameters
 
@@ -428,14 +433,14 @@ int ff_hevc_decode_nal_pps(HEVCContext *s)
 
     // Coded parameters
     pps_id = get_ue_golomb(gb);
-    header_printf("          pic_parameter_set_id                      u(v) : %d\n", pps_id);
+    header_printf("          pic_parameter_set_id                     u(v) : %d\n", pps_id);
 
     if (pps_id >= MAX_PPS_COUNT) {
         av_log(s->avctx, AV_LOG_ERROR, "PPS id out of range: %d\n", pps_id);
         goto err;
     }
     pps->sps_id = get_ue_golomb(gb);
-    header_printf("          seq_parameter_set_id                      u(v) : %d\n", pps->sps_id);
+    header_printf("          seq_parameter_set_id                     u(v) : %d\n", pps->sps_id);
 
     if (pps->sps_id >= MAX_SPS_COUNT) {
         av_log(s->avctx, AV_LOG_ERROR, "SPS id out of range: %d\n", pps->sps_id);
@@ -444,54 +449,54 @@ int ff_hevc_decode_nal_pps(HEVCContext *s)
     sps = s->sps_list[pps->sps_id];
 
     pps->dependent_slice_segments_enabled_flag = get_bits1(gb);
-    header_printf("          dependent_slice_segments_enabled_flag             u(1) : %d\n", pps->dependent_slice_segments_enabled_flag);
+    header_printf("          dependent_slice_segments_enabled_flag    u(1) : %d\n", pps->dependent_slice_segments_enabled_flag);
                   
     pps->sign_data_hiding_flag = get_bits1(gb);
-    header_printf("          sign_data_hiding_flag                     u(1) : %d\n", pps->sign_data_hiding_flag);
+    header_printf("          sign_data_hiding_flag                    u(1) : %d\n", pps->sign_data_hiding_flag);
     pps->cabac_init_present_flag = get_bits1(gb);
-    header_printf("          cabac_init_present_flag                   u(1) : %d\n", pps->cabac_init_present_flag);
+    header_printf("          cabac_init_present_flag                  u(1) : %d\n", pps->cabac_init_present_flag);
     pps->num_ref_idx_l0_default_active = get_ue_golomb(gb) + 1;
-    header_printf("          num_ref_idx_l0_default_active_minus1      u(v) : %d\n", pps->num_ref_idx_l0_default_active-1);
+    header_printf("          num_ref_idx_l0_default_active_minus1     u(v) : %d\n", pps->num_ref_idx_l0_default_active-1);
     pps->num_ref_idx_l1_default_active = get_ue_golomb(gb) + 1;
-    header_printf("          num_ref_idx_l1_default_active_minus1      u(v) : %d\n", pps->num_ref_idx_l1_default_active-1);
+    header_printf("          num_ref_idx_l1_default_active_minus1     u(v) : %d\n", pps->num_ref_idx_l1_default_active-1);
     pps->pic_init_qp_minus26 = get_se_golomb(gb);
-    header_printf("          pic_init_qp_minus26                       s(v) : %d\n", pps->pic_init_qp_minus26);
+    header_printf("          pic_init_qp_minus26                      s(v) : %d\n", pps->pic_init_qp_minus26);
     pps->constrained_intra_pred_flag = get_bits1(gb);
-    header_printf("          constrained_intra_pred_flag               u(1) : %d\n", pps->constrained_intra_pred_flag);
+    header_printf("          constrained_intra_pred_flag              u(1) : %d\n", pps->constrained_intra_pred_flag);
     pps->transform_skip_enabled_flag = get_bits1(gb);
-    header_printf("          transform_skip_enabled_flag               u(1) : %d\n", pps->transform_skip_enabled_flag);
+    header_printf("          transform_skip_enabled_flag              u(1) : %d\n", pps->transform_skip_enabled_flag);
 
 
     pps->cu_qp_delta_enabled_flag = get_bits1(gb);
-    header_printf("          cu_qp_delta_enabled_flag                  u(1) : %d\n", pps->cu_qp_delta_enabled_flag);
+    header_printf("          cu_qp_delta_enabled_flag                 u(1) : %d\n", pps->cu_qp_delta_enabled_flag);
     if (pps->cu_qp_delta_enabled_flag) {
         pps->diff_cu_qp_delta_depth = get_ue_golomb(gb);
-        header_printf("          diff_cu_qp_delta_depth                    u(v) : %d\n", pps->diff_cu_qp_delta_depth);
+        	header_printf("          diff_cu_qp_delta_depth                   u(v) : %d\n", pps->diff_cu_qp_delta_depth);
     }
     pps->cb_qp_offset = get_se_golomb(gb);
-    header_printf("          cb_qp_offset                              s(v) : %d\n", pps->cb_qp_offset);
+    header_printf("          cb_qp_offset                             s(v) : %d\n", pps->cb_qp_offset);
     pps->cr_qp_offset = get_se_golomb(gb);
-    header_printf("          cr_qp_offset                              s(v) : %d\n", pps->cr_qp_offset);
+    header_printf("          cr_qp_offset                             s(v) : %d\n", pps->cr_qp_offset);
     pps->pic_slice_level_chroma_qp_offsets_present_flag = get_bits1(gb);
-    header_printf("          slicelevel_chroma_qp_flag                 u(1) : %d\n", pps->pic_slice_level_chroma_qp_offsets_present_flag);
+    header_printf("          slicelevel_chroma_qp_flag                u(1) : %d\n", pps->pic_slice_level_chroma_qp_offsets_present_flag);
     pps->weighted_pred_flag            = get_bits1(gb);
-    header_printf("          weighted_pred_flag                        u(1) : %d\n", pps->weighted_pred_flag);
+    header_printf("          weighted_pred_flag                       u(1) : %d\n", pps->weighted_pred_flag);
     pps->weighted_bipred_flag          = get_bits1(gb);
-    header_printf("          weighted_bipred_flag                      u(1) : %d\n", pps->weighted_bipred_flag);
+    header_printf("          weighted_bipred_flag                     u(1) : %d\n", pps->weighted_bipred_flag);
     pps->output_flag_present_flag      = get_bits1(gb);
-    header_printf("          output_flag_present_flag                  u(1) : %d\n", pps->output_flag_present_flag);
+    header_printf("          output_flag_present_flag                 u(1) : %d\n", pps->output_flag_present_flag);
     pps->transquant_bypass_enable_flag = get_bits1(gb);
-    header_printf("          transquant_bypass_enable_flag                  u(1) : %d\n", pps->transquant_bypass_enable_flag);
+    header_printf("          transquant_bypass_enable_flag            u(1) : %d\n", pps->transquant_bypass_enable_flag);
     pps->tiles_enabled_flag               = get_bits1(gb);
-    header_printf("          tiles_enabled_flag                  u(1) : %d\n", pps->tiles_enabled_flag);
+    header_printf("          tiles_enabled_flag                       u(1) : %d\n", pps->tiles_enabled_flag);
     pps->entropy_coding_sync_enabled_flag = get_bits1(gb);
-    header_printf("          entropy_coding_sync_enabled_flag                  u(1) : %d\n", pps->entropy_coding_sync_enabled_flag);
+    header_printf("          entropy_coding_sync_enabled_flag         u(1) : %d\n", pps->entropy_coding_sync_enabled_flag);
     
     if (pps->tiles_enabled_flag) {
         pps->num_tile_columns     = get_ue_golomb(gb) + 1;
-        header_printf("          num_tile_columns_minus1                   u(v) : %d\n", pps->num_tile_columns-1);
+        header_printf("          num_tile_columns_minus1                  u(v) : %d\n", pps->num_tile_columns-1);
         pps->num_tile_rows        = get_ue_golomb(gb) + 1;
-        header_printf("          num_tile_rows_minus1                      u(v) : %d\n", pps->num_tile_rows-1);
+        header_printf("          num_tile_rows_minus1                     u(v) : %d\n", pps->num_tile_rows-1);
 
         pps->column_width = av_malloc(pps->num_tile_columns * sizeof(*pps->column_width));
         pps->row_height   = av_malloc(pps->num_tile_rows * sizeof(*pps->row_height));
@@ -499,53 +504,53 @@ int ff_hevc_decode_nal_pps(HEVCContext *s)
             goto err;
 
         pps->uniform_spacing_flag = get_bits1(gb);
-        header_printf("          uniform_spacing_flag                      u(1) : %d\n", pps->uniform_spacing_flag);
+        header_printf("          uniform_spacing_flag                     u(1) : %d\n", pps->uniform_spacing_flag);
 
         if (!pps->uniform_spacing_flag) {
             for (i = 0; i < pps->num_tile_columns - 1; i++) {
                 pps->column_width[i] = get_ue_golomb(gb);
-                header_printf("          column_width[ ]                          u(v) : %d\n", pps->column_width[i]);
+                header_printf("          column_width[ ]                      u(v) : %d\n", pps->column_width[i]);
             }
             for (i = 0; i < pps->num_tile_rows - 1; i++) {
                 pps->row_height[i] = get_ue_golomb(gb);
-                header_printf("          row_height[ ]                            u(v) : %d\n", pps->row_height[i]);
+                header_printf("          row_height[ ]                        u(v) : %d\n", pps->row_height[i]);
             }
         }
         pps->loop_filter_across_tiles_enabled_flag = get_bits1(gb);
-        header_printf("          loop_filter_across_tiles_enabled_flag     u(1) : %d\n", pps->loop_filter_across_tiles_enabled_flag);
+        header_printf("          loop_filter_across_tiles_enabled_flag    u(1) : %d\n", pps->loop_filter_across_tiles_enabled_flag);
     }
 
     pps->seq_loop_filter_across_slices_enabled_flag = get_bits1(gb);
-    header_printf("          loop_filter_across_slice_flag             u(1) : %d\n", pps->seq_loop_filter_across_slices_enabled_flag);
+    header_printf("          loop_filter_across_slices_enabled_flag   u(1) : %d\n", pps->seq_loop_filter_across_slices_enabled_flag);
 
     pps->deblocking_filter_control_present_flag = get_bits1(gb);
-    header_printf("          deblocking_filter_control_present_flag    u(1) : %d\n", pps->deblocking_filter_control_present_flag);
+    header_printf("          deblocking_filter_control_present_flag   u(1) : %d\n", pps->deblocking_filter_control_present_flag);
     if (pps->deblocking_filter_control_present_flag) {
         pps->deblocking_filter_override_enabled_flag = get_bits1(gb);
-        header_printf("          deblocking_filter_override_enabled_flag   u(1) : %d\n", pps->deblocking_filter_override_enabled_flag);
+        header_printf("          deblocking_filter_override_enabled_flag  u(1) : %d\n", pps->deblocking_filter_override_enabled_flag);
         pps->pps_disable_deblocking_filter_flag = get_bits1(gb);
-        header_printf("          pps_deblocking_filter_flag                u(1) : %d\n", pps->pps_disable_deblocking_filter_flag);
+        header_printf("          pps_deblocking_filter_flag               u(1) : %d\n", pps->pps_disable_deblocking_filter_flag);
         if (!pps->pps_disable_deblocking_filter_flag) {
             pps->beta_offset = get_se_golomb(gb) * 2;
-            header_printf("          beta_offset_div2                          s(v) : %d\n", pps->beta_offset/2);
+            header_printf("          beta_offset_div2                         s(v) : %d\n", pps->beta_offset/2);
             pps->tc_offset = get_se_golomb(gb) * 2;
-            header_printf("          tc_offset_div2                            s(v) : %d\n", pps->tc_offset/2);
+            header_printf("          tc_offset_div2                           s(v) : %d\n", pps->tc_offset/2);
         }
     }
 
     pps->pps_scaling_list_data_present_flag = get_bits1(gb);
-    header_printf("          pps_scaling_list_data_present_flag        u(1) : %d\n", pps->pps_scaling_list_data_present_flag);
+    header_printf("          pps_scaling_list_data_present_flag       u(1) : %d\n", pps->pps_scaling_list_data_present_flag);
     if (pps->pps_scaling_list_data_present_flag) {
         av_log(s->avctx, AV_LOG_ERROR, "TODO: scaling_list_data_present_flag\n");
         goto err;
     }
 
     pps->log2_parallel_merge_level = get_ue_golomb(gb) + 2;
-    header_printf("          log2_parallel_merge_level_minus2          u(v) : %d\n", pps->log2_parallel_merge_level-2);
+    header_printf("          log2_parallel_merge_level_minus2         u(v) : %d\n", pps->log2_parallel_merge_level-2);
     pps->slice_header_extension_present_flag = get_bits1(gb);
-    header_printf("          slice_header_extension_present_flag       u(1) : %d\n", pps->slice_header_extension_present_flag);
+    header_printf("          slice_header_extension_present_flag      u(1) : %d\n", pps->slice_header_extension_present_flag);
     pps->pps_extension_flag = get_bits1(gb);
-    header_printf("          pps_extension_flag                        u(1) : %d\n", pps->pps_extension_flag);
+    header_printf("          pps_extension_flag                       u(1) : %d\n", pps->pps_extension_flag);
 
     // Inferred parameters
     pps->col_bd = av_malloc((pps->num_tile_columns + 1) * sizeof(*pps->col_bd));

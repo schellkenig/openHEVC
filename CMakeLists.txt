@@ -7,7 +7,7 @@ find_package(SDL REQUIRED)
 
 add_subdirectory(wrapper_hm)
 
-set(CMAKE_C_FLAGS -std=c99)
+#set(CMAKE_C_FLAGS -std=c99)
 
 set(filenames
 	main.c	sdl.c
