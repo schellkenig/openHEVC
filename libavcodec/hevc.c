@@ -717,7 +717,6 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
             }
         }
     }
-    if(c_idx == 0){
 
     if (s->cu.cu_transquant_bypass_flag) {
         hevcdsp->transquant_bypass(dst, coeffs, stride, log2_trafo_size, bit_depth);
@@ -759,7 +758,6 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
         } else {
             hevcdsp->transform_add[log2_trafo_size-2](dst, coeffs, stride, bit_depth);
         }
-    }
     }
     cabac_printf("read_ResidualCoding_end\n");
 }
