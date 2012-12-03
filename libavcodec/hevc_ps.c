@@ -398,12 +398,10 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
 
     av_free(s->sps_list[sps_id]);
     s->sps_list[sps_id] = sps;
+
     return 0;
 
 err:
-    for (i = 0; i < MAX_SHORT_TERM_RPS_COUNT; i++)
-        av_free(sps->short_term_rps_list[i]);
-
     av_free(sps);
     return -1;
 }
@@ -447,6 +445,7 @@ int ff_hevc_decode_nal_pps(HEVCContext *s)
         goto err;
     }
     sps = s->sps_list[pps->sps_id];
+    s->sps = sps;
 
     pps->dependent_slice_segments_enabled_flag = get_bits1(gb);
     header_printf("          dependent_slice_segments_enabled_flag    u(1) : %d\n", pps->dependent_slice_segments_enabled_flag);
@@ -693,6 +692,32 @@ err:
     return -1;
 }
 
+static void decode_nal_sei_decoded_picture_hash(HEVCContext *s, int payload_size)
+{
+	int cIdx, i;
+	int hash_type;
+	int picture_md5;
+	int picture_crc;
+	int picture_checksum;
+	GetBitContext *gb = &s->gb;
+	header_printf("=========== Decoded picture hash SEI message ===========\n");
+	hash_type = get_bits(gb, 8);
+    header_printf("          hash_type                                u(8) : %d\n", hash_type);
+	for( cIdx = 0; cIdx < ((s->sps->chroma_format_idc == 0) ? 1 : 3); cIdx++ ) {
+		if ( hash_type == 0 ) {
+			for( i = 0; i < 16; i++) {
+				picture_md5 = get_bits(gb, 8);
+				header_printf("          picture_md5                              u(8) : %d\n", picture_md5);
+			}
+		} else if( hash_type == 1 ) {
+			picture_crc = get_bits(gb, 16);
+			header_printf("          picture_crc                              u(16) : %d\n", picture_crc);
+		} else if( hash_type == 2 ) {
+			picture_checksum = get_bits(gb, 32);
+			header_printf("          picture_checksum                         u(32) : %d\n", picture_checksum);
+		}
+	}
+}
 static int decode_nal_sei_message(HEVCContext *s)
 {
     GetBitContext *gb = &s->gb;
@@ -701,15 +726,23 @@ static int decode_nal_sei_message(HEVCContext *s)
     int payload_size = 0;
     int byte = 0xFF;
     av_log(s->avctx, AV_LOG_DEBUG, "Decoding SEI\n");
+	header_printf("=========== SEI message ===========\n");
 
-    while (byte == 0xFF)
-        payload_type += (byte = get_bits(gb, 8));
-
+    while (byte == 0xFF) {
+    	byte = get_bits(gb, 8);
+		header_printf("          payload_type                             u(8) : %d\n", byte);
+        payload_type += byte;
+    }
     byte = 0xFF;
-    while (byte == 0xFF)
-        payload_size += (byte = get_bits(gb, 8));
-
-    skip_bits(gb, 8*payload_size);
+    while (byte == 0xFF) {
+       	byte = get_bits(gb, 8);
+    	header_printf("          payload_size                             u(8) : %d\n", byte);
+        payload_size += byte;
+    }
+    if (payload_type == 256)
+    	decode_nal_sei_decoded_picture_hash(s, payload_size);
+    else
+    	skip_bits(gb, 8*payload_size);
     return 0;
 }
 

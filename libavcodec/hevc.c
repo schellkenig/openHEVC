@@ -143,7 +143,7 @@ static int hls_slice_header(HEVCContext *s)
         return -1;
     }
     s->pps = s->pps_list[sh->pps_id];
-    if (s->sps != s->sps_list[s->pps->sps_id]) {
+    //TODO: if (s->sps != s->sps_list[s->pps->sps_id]) { 
         s->sps = s->sps_list[s->pps->sps_id];
         s->vps = s->vps_list[s->sps->vps_id];
         //TODO: Handle switching between different SPS better
@@ -204,7 +204,7 @@ static int hls_slice_header(HEVCContext *s)
         ff_hevc_pred_init(s->hpc[1], s->sps->bit_depth[1]);
         ff_hevc_dsp_init(s->hevcdsp[0], s->sps->bit_depth[0]);
         ff_hevc_dsp_init(s->hevcdsp[1], s->sps->bit_depth[1]);
-    }
+//TODO:    }
 
     if (!sh->first_slice_in_pic_flag) {
         if (s->pps->dependent_slice_segments_enabled_flag) {
@@ -388,16 +388,13 @@ static int hls_sao_param(HEVCContext *s, int rx, int ry)
 
     if (rx > 0) {
         int left_ctb_in_slice = s->ctb_addr_in_slice > 0;
-        int left_ctb_in_tile = s->pps->tile_id[s->ctb_addr_ts] ==
-                               s->pps->tile_id[s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - 1]];
+        int left_ctb_in_tile = 1 ;//TODO: s->pps->tile_id[s->ctb_addr_ts] == s->pps->tile_id[s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - 1]];
         if (left_ctb_in_slice && left_ctb_in_tile)
             sao_merge_left_flag = ff_hevc_sao_merge_flag_decode(s);
     }
     if (ry > 0 && !sao_merge_left_flag) {
-        int up_ctb_in_slice = (s->ctb_addr_ts - s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - s->sps->pic_width_in_ctbs]) <=
-                              s->ctb_addr_in_slice;
-        int up_ctb_in_tile = (s->pps->tile_id[s->ctb_addr_ts] ==
-                              s->pps->tile_id[s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - s->sps->pic_width_in_ctbs]]);
+        int up_ctb_in_slice = 1; //TODO: (s->ctb_addr_ts - s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - s->sps->pic_width_in_ctbs]) <= s->ctb_addr_in_slice;
+        int up_ctb_in_tile = 1; //TODO: (s->pps->tile_id[s->ctb_addr_ts] == s->pps->tile_id[s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs - s->sps->pic_width_in_ctbs]]);
         if (up_ctb_in_slice && up_ctb_in_tile)
             sao_merge_up_flag = ff_hevc_sao_merge_flag_decode(s);
     }
@@ -839,11 +836,6 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
 #endif
 
     if (trafo_depth > 0 && log2_trafo_size == 2) {
-        SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
-        SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
-        SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
-        SAMPLE(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase);
-    } else {
         SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
         SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
         SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
@@ -1391,7 +1383,7 @@ static int hls_slice_data(HEVCContext *s)
     s->ctb_addr_rs = s->sh.slice_ctb_addr_rs;
     s->ctb_addr_ts = s->pps->ctb_addr_rs_to_ts[s->ctb_addr_rs];
 
-    while (s->ctb_addr_ts < s->sps->pic_width_in_ctbs*s->sps->pic_height_in_ctbs) {
+    while (more_data) {
         x_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 0);
         y_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 1);
         s->num_pcm_block = 0;
@@ -1414,7 +1406,6 @@ static int hls_slice_data(HEVCContext *s)
              ((s->ctb_addr_ts % s->sps->pic_width_in_ctbs) == 0)))
             align_get_bits(&s->gb);
     }
-
     return 0;
 }
 
@@ -1554,10 +1545,6 @@ static av_cold int hevc_decode_free(AVCodecContext *avctx)
         s->avctx->release_buffer(s->avctx, &s->frame);
 
     for (i = 0; i < MAX_SPS_COUNT; i++) {
-        if (s->sps_list[i]) {
-            for (j = 0; j < MAX_SHORT_TERM_RPS_COUNT; j++)
-                av_freep(&s->sps_list[i]->short_term_rps_list[j]);
-        }
         av_freep(&s->sps_list[i]);
     }
 
