@@ -835,12 +835,10 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
     cabac_printf("read_TransformTree.start\n");
 #endif
 
-    if (trafo_depth > 0 && log2_trafo_size == 2) {
-        SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
-        SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
-        SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
-        SAMPLE(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase);
-    }
+    SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
+    SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
+    SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
+    SAMPLE(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase);
 
     if (s->cu.intra_split_flag) {
         if (trafo_depth == 1)
