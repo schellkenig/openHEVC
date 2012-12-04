@@ -1536,7 +1536,7 @@ static av_cold int hevc_decode_init(AVCodecContext *avctx)
 
 static av_cold int hevc_decode_free(AVCodecContext *avctx)
 {
-    int i, j;
+    int i;
     HEVCContext *s = avctx->priv_data;
 
     if (s->frame.data[0])
