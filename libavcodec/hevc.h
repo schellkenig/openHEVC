@@ -33,7 +33,7 @@
  * does so.
  */
 #define DEBUG_TRACE1 0
-#if 1
+#if 0
 #define header_printf printf
 #define cabac_printf printf
 #define check_cabac_printf
