@@ -984,7 +984,7 @@ static void luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPb
 	int singleMCLFlag = 0;
 	int nCS = 1 << log2_cb_size;
 
-	if((s->pps->log2_parallel_merge_level -2 >0) && (nCS =8) )
+	if((s->pps->log2_parallel_merge_level -2 >0) && (nCS ==8) )
 	{
 		singleMCLFlag = 1;
 
