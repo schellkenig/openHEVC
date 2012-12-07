@@ -45,7 +45,6 @@
 #define dsp_printf
 #endif
 #define REFERENCE_ENCODER_QUIRKS 1
-#define ANAND_MV_DECODE 1
 
 /**
  * Value of the luma sample at position (x, y) in the 2D array tab.
