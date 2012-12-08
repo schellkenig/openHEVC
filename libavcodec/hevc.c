@@ -322,7 +322,7 @@ static int hls_slice_header(HEVCContext *s)
         	header_printf("          slice_cr_qp_offset                       s(v) : %d\n", sh->slice_cr_qp_offset);
         }
         if (s->pps->deblocking_filter_control_present_flag) {
-            int deblocking_filter_override_flag = 1;
+            int deblocking_filter_override_flag = 0;
             if (s->pps->deblocking_filter_override_enabled_flag) {
                 deblocking_filter_override_flag = get_bits1(gb);
             	header_printf("          deblocking_filter_override_flag          u(1) : %d\n", deblocking_filter_override_flag);
@@ -336,11 +336,14 @@ static int hls_slice_header(HEVCContext *s)
                     sh->tc_offset = get_se_golomb(gb) * 2;
                 	header_printf("          tc_offset_div2                           s(v) : %d\n", sh->tc_offset/2);
                 }
+            } else {
+                sh->disable_deblocking_filter_flag = s->pps->pps_disable_deblocking_filter_flag;
             }
         }
 
         if (s->pps->seq_loop_filter_across_slices_enabled_flag
-            && (sh->slice_sample_adaptive_offset_flag ||
+            && (sh->slice_sample_adaptive_offset_flag[0] ||
+                sh->slice_sample_adaptive_offset_flag[1] ||
                 !sh->disable_deblocking_filter_flag)) {
             sh->slice_loop_filter_across_slices_enabled_flag = get_bits1(gb);
             header_printf("          slice_loop_filter_across_slices_enabled_flag u(1) : %d\n",  sh->slice_loop_filter_across_slices_enabled_flag);
