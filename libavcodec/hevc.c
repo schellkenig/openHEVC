@@ -143,7 +143,7 @@ static int hls_slice_header(HEVCContext *s)
         return -1;
     }
     s->pps = s->pps_list[sh->pps_id];
-    //TODO: if (s->sps != s->sps_list[s->pps->sps_id]) { 
+    if (s->sps != s->sps_list[s->pps->sps_id]) {
         s->sps = s->sps_list[s->pps->sps_id];
         s->vps = s->vps_list[s->sps->vps_id];
         //TODO: Handle switching between different SPS better
@@ -204,7 +204,7 @@ static int hls_slice_header(HEVCContext *s)
         ff_hevc_pred_init(s->hpc[1], s->sps->bit_depth[1]);
         ff_hevc_dsp_init(s->hevcdsp[0], s->sps->bit_depth[0]);
         ff_hevc_dsp_init(s->hevcdsp[1], s->sps->bit_depth[1]);
-//TODO:    }
+    }
 
     if (!sh->first_slice_in_pic_flag) {
         if (s->pps->dependent_slice_segments_enabled_flag) {
@@ -384,6 +384,7 @@ static int hls_sao_param(HEVCContext *s, int rx, int ry)
     int sao_merge_left_flag = 0;
     int sao_merge_up_flag = 0;
 
+	cabac_printf("sao_param (%d, %d) : %d\n", rx, ry, s->ctb_addr_in_slice);
     SAOParams *sao = &CTB(s->sao, rx, ry);
 
     if (rx > 0) {
@@ -829,8 +830,8 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
                                int trafo_depth, int blk_idx)
 {
 #if DEBUG_TRACE1
-    cabac_printf("read_TransformTree.start(%d, %d, %d, %d, %d, %d, %d, %d, %d)\n", x0,  y0,  xBase,  yBase,
-                                xBase,  yBase, log2_trafo_size,  trafo_depth,  blk_idx);
+    cabac_printf("read_TransformTree.start(%d, %d, %d, %d, %d, %d, %d)\n", x0,  y0,  xBase,  yBase,
+                                log2_trafo_size,  trafo_depth,  blk_idx);
 #else
     cabac_printf("read_TransformTree.start\n");
 #endif
@@ -1386,6 +1387,9 @@ static int hls_slice_data(HEVCContext *s)
     while (more_data) {
         x_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 0);
         y_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 1);
+		cabac_printf("CtbAddrRS = %d, CtbSize = %d, pic_width_in_luma_samples = %d, x_ctb = %d, y_ctb = %d, log2_ctb_size = %d\n",
+				s->ctb_addr_rs, ctb_size, s->sps->pic_width_in_luma_samples, x_ctb, y_ctb, s->sps->log2_ctb_size);
+
         s->num_pcm_block = 0;
         s->ctb_addr_in_slice = s->ctb_addr_rs - s->sh.slice_address;
         if (s->sh.slice_sample_adaptive_offset_flag[0] ||
