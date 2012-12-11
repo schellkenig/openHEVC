@@ -364,6 +364,9 @@ Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
   UInt NumPocLtCurr = 0;
   Int i;
 
+    if (m_pcRPS->getNumberOfNegativePictures() !=0) {
+        printf("RefPicSetStCurr0[%d] = {", m_pcRPS->getNumberOfNegativePictures());
+    }
   for(i=0; i < m_pcRPS->getNumberOfNegativePictures(); i++)
   {
     if(m_pcRPS->getUsed(i))
@@ -373,10 +376,17 @@ Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
       pcRefPic->setIsUsedAsLongTerm(0);
       pcRefPic->getPicYuvRec()->extendPicBorder();
       RefPicSetStCurr0[NumPocStCurr0] = pcRefPic;
+        printf("%d, ",getPOC()+m_pcRPS->getDeltaPOC(i));
       NumPocStCurr0++;
       pcRefPic->setCheckLTMSBPresent(false);  
     }
   }
+    if (m_pcRPS->getNumberOfNegativePictures() !=0) {
+        printf("}\n");
+    }
+    if (m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures() !=0) {
+        printf("RefPicSetStCurr0[%d] = {", m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures());
+    }
   for(; i < m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures(); i++)
   {
     if(m_pcRPS->getUsed(i))
@@ -386,10 +396,14 @@ Void TComSlice::setRefPicList( TComList<TComPic*>& rcListPic )
       pcRefPic->setIsUsedAsLongTerm(0);
       pcRefPic->getPicYuvRec()->extendPicBorder();
       RefPicSetStCurr1[NumPocStCurr1] = pcRefPic;
+        printf("%d, ",getPOC()+m_pcRPS->getDeltaPOC(i));
       NumPocStCurr1++;
       pcRefPic->setCheckLTMSBPresent(false);  
     }
   }
+    if (m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures()  !=0) {
+        printf("}\n");
+    }
   for(i = m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures()+m_pcRPS->getNumberOfLongtermPictures()-1; i > m_pcRPS->getNumberOfNegativePictures()+m_pcRPS->getNumberOfPositivePictures()-1 ; i--)
   {
     if(m_pcRPS->getUsed(i))

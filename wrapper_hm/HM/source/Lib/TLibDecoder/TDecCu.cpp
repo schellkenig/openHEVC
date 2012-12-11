@@ -559,7 +559,7 @@ TDecCu::xIntraRecLumaBlk( TComDataCU* pcCU,
         }
     }
  */   if (uiWidth == 4) {
-        printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
+ //       printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
         for( UInt uiY = 0; uiY < uiHeight; uiY++ )
         {
             pPred     = piPred + uiY  * uiStride;
@@ -569,14 +569,14 @@ TDecCu::xIntraRecLumaBlk( TComDataCU* pcCU,
             
             for( UInt uiX = 0; uiX < uiWidth; uiX++ )
             {
-                printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
+//                printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
                 pReco    [ uiX ] = ClipY( pPred[ uiX ] + pResi[ uiX ] );
                 pRecIPred[ uiX ] = pReco[ uiX ];
             }
         }
     } else {
         if (uiWidth == 8) {
-            printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
+//            printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
             for( UInt uiL = 0; uiL < 2; uiL++ )
                 for( UInt uiK = 0; uiK < 2; uiK++ )
                     for( UInt uiY = 0; uiY < 4; uiY++ )
@@ -587,14 +587,14 @@ TDecCu::xIntraRecLumaBlk( TComDataCU* pcCU,
                         pRecIPred = piRecIPred + uiY  * uiRecIPredStride + uiK * 4 + uiL * 4  * uiRecIPredStride;
                         for( UInt uiX = 0; uiX < 4; uiX++ )
                         {
-                            printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
+//                            printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
                             pReco    [ uiX ] = ClipY( pPred[ uiX ] + pResi[ uiX ] );
                             pRecIPred[ uiX ] = pReco[ uiX ];
                         }
                     }
         } else {
             if (uiWidth == 16) {
-                printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
+//                printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
                 for( UInt uiN = 0; uiN < 2; uiN++ )
                     for( UInt uiM = 0; uiM < 2; uiM++ )
                         for( UInt uiL = 0; uiL < 2; uiL++ )
@@ -607,13 +607,13 @@ TDecCu::xIntraRecLumaBlk( TComDataCU* pcCU,
                                     pRecIPred = piRecIPred + uiY  * uiRecIPredStride + uiK * 4 + uiL * 4  * uiRecIPredStride + uiM * 8 + uiN * 8 * uiRecIPredStride;
                                     for( UInt uiX = 0; uiX < 4; uiX++ )
                                     {
-                                        printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
+//                                        printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
                                         pReco    [ uiX ] = ClipY( pPred[ uiX ] + pResi[ uiX ] );
                                         pRecIPred[ uiX ] = pReco[ uiX ];
                                     }
                                 }
             } else {
-                printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
+//                printf("***** uiWidth %d uiHeight %d ***\n", uiWidth, uiHeight);
                 for( UInt uiB = 0; uiB < 2; uiB++ )
                     for( UInt uiA = 0; uiA < 2; uiA++ )
                         for( UInt uiN = 0; uiN < 2; uiN++ )
@@ -628,7 +628,7 @@ TDecCu::xIntraRecLumaBlk( TComDataCU* pcCU,
                                             pRecIPred = piRecIPred + uiY  * uiRecIPredStride + uiK * 4 + uiL * 4  * uiRecIPredStride + uiM * 8 + uiN * 8 * uiRecIPredStride + uiA * 16 + uiB * 16 * uiRecIPredStride;
                                             for( UInt uiX = 0; uiX < 4; uiX++ )
                                             {
-                                                printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
+//                                                printf("sample %d pred %d res %d\n", ClipY( pPred[ uiX ] + pResi[ uiX ] ), pPred[ uiX ], pResi[ uiX ]);
                                                 pReco    [ uiX ] = ClipY( pPred[ uiX ] + pResi[ uiX ] );
                                                 pRecIPred[ uiX ] = pReco[ uiX ];
                                             }
