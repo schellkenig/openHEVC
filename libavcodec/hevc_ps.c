@@ -260,7 +260,9 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
 
     sps->chroma_format_idc = get_ue_golomb(gb);
     header_printf("          chroma_format_idc                        u(v) : %d\n", sps->chroma_format_idc);
-    
+    if (sps->chroma_format_idc != 1) {
+    	printf(" chroma_format_idc != 1 : error SEI\n");
+    }
     if (sps->chroma_format_idc == 3) {
         sps->separate_colour_plane_flag = get_bits1(gb);
         header_printf("          separate_colour_plane_flag               u(1) : %d\n", sps->separate_colour_plane_flag);
@@ -379,10 +381,8 @@ int ff_hevc_decode_nal_sps(HEVCContext *s)
 
     sps->log2_ctb_size = sps->log2_min_coding_block_size
                          + sps->log2_diff_max_min_coding_block_size;
-    sps->pic_width_in_ctbs = ROUNDED_DIV(sps->pic_width_in_luma_samples,
-                                         (1 << sps->log2_ctb_size));
-    sps->pic_height_in_ctbs = ROUNDED_DIV(sps->pic_height_in_luma_samples,
-                                          (1 << sps->log2_ctb_size));
+    sps->pic_width_in_ctbs  = ( sps->pic_width_in_luma_samples  + (1 << sps->log2_ctb_size)-1 ) >> sps->log2_ctb_size;
+    sps->pic_height_in_ctbs = ( sps->pic_height_in_luma_samples + (1 << sps->log2_ctb_size)-1 ) >> sps->log2_ctb_size;
     sps->pic_width_in_min_cbs = sps->pic_width_in_luma_samples >>
                                 sps->log2_min_coding_block_size;
     sps->pic_height_in_min_cbs = sps->pic_height_in_luma_samples >>
@@ -445,7 +445,6 @@ int ff_hevc_decode_nal_pps(HEVCContext *s)
         goto err;
     }
     sps = s->sps_list[pps->sps_id];
-    s->sps = sps;
 
     pps->dependent_slice_segments_enabled_flag = get_bits1(gb);
     header_printf("          dependent_slice_segments_enabled_flag    u(1) : %d\n", pps->dependent_slice_segments_enabled_flag);
@@ -703,7 +702,7 @@ static void decode_nal_sei_decoded_picture_hash(HEVCContext *s, int payload_size
 	header_printf("=========== Decoded picture hash SEI message ===========\n");
 	hash_type = get_bits(gb, 8);
     header_printf("          hash_type                                u(8) : %d\n", hash_type);
-	for( cIdx = 0; cIdx < ((s->sps->chroma_format_idc == 0) ? 1 : 3); cIdx++ ) {
+	for( cIdx = 0; cIdx < 3/*((s->sps->chroma_format_idc == 0) ? 1 : 3)*/; cIdx++ ) {
 		if ( hash_type == 0 ) {
 			for( i = 0; i < 16; i++) {
 				picture_md5 = get_bits(gb, 8);
