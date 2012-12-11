@@ -387,7 +387,6 @@ static int hls_sao_param(HEVCContext *s, int rx, int ry)
     int sao_merge_left_flag = 0;
     int sao_merge_up_flag = 0;
 
-	cabac_printf("sao_param (%d, %d) : %d\n", rx, ry, s->ctb_addr_in_slice);
     SAOParams *sao = &CTB(s->sao, rx, ry);
 
     if (rx > 0) {
@@ -1421,8 +1420,8 @@ static int hls_slice_data(HEVCContext *s)
     while (more_data) {
         x_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 0);
         y_ctb = INVERSE_RASTER_SCAN(s->ctb_addr_rs, ctb_size, ctb_size, s->sps->pic_width_in_luma_samples, 1);
-		cabac_printf("CtbAddrRS = %d, CtbSize = %d, pic_width_in_luma_samples = %d, x_ctb = %d, y_ctb = %d, log2_ctb_size = %d\n",
-				s->ctb_addr_rs, ctb_size, s->sps->pic_width_in_luma_samples, x_ctb, y_ctb, s->sps->log2_ctb_size);
+//		cabac_printf("CtbAddrRS = %d, CtbSize = %d, pic_width_in_luma_samples = %d, x_ctb = %d, y_ctb = %d, log2_ctb_size = %d\n",
+//				s->ctb_addr_rs, ctb_size, s->sps->pic_width_in_luma_samples, x_ctb, y_ctb, s->sps->log2_ctb_size);
 
         s->num_pcm_block = 0;
         s->ctb_addr_in_slice = s->ctb_addr_rs - s->sh.slice_address;
@@ -1440,7 +1439,7 @@ static int hls_slice_data(HEVCContext *s)
         if (more_data && (s->pps->tiles_enabled_flag &&
                           s->pps->tile_id[s->ctb_addr_ts] !=
                           s->pps->tile_id[s->ctb_addr_ts - 1]) ||
-            (s->pps->tiles_enabled_flag &&
+            (s->pps->entropy_coding_sync_enabled_flag &&
              ((s->ctb_addr_ts % s->sps->pic_width_in_ctbs) == 0)))
             align_get_bits(&s->gb);
     }
