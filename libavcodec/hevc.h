@@ -42,7 +42,7 @@
 #else
 #define header_printf
 #define cabac_printf
-#define check_cabac_printf printf
+#define check_cabac_printf
 #define dsp_printf
 #endif
 #define REFERENCE_ENCODER_QUIRKS 1

@@ -364,7 +364,7 @@ static int hls_slice_header(HEVCContext *s)
     sh->slice_ctb_addr_rs = sh->slice_address;
     sh->slice_cb_addr_zs = sh->slice_address <<
                            (s->sps->log2_diff_max_min_coding_block_size << 1);
-    //printf("\tPOC: %d\n",s->poc);
+    check_cabac_printf("\tPOC: %d\n",s->poc);
     return 0;
 }
 
