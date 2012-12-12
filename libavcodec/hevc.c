@@ -476,6 +476,8 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
     int transform_skip_flag = 0;
 
     int last_significant_coeff_x, last_significant_coeff_y;
+    int last_scan_pos;
+    int n_end;
     int num_coeff = 0;
     int num_last_subset;
     int x_cg_last_sig, y_cg_last_sig;
@@ -624,11 +626,21 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
         av_dlog(s->avctx, AV_LOG_DEBUG, "significant_coeff_group_flag[%d][%d]: %d\n",
                x_cg, y_cg, s->rc.significant_coeff_group_flag[x_cg][y_cg]);
 
-        for (n = 15; n >= 0; n--) {
+        last_scan_pos = num_coeff - offset - 1;
+
+        if (i == num_last_subset) {
+            n_end = last_scan_pos - 1;
+            significant_coeff_flag[last_scan_pos] = 1;
+        } else {
+            n_end = 15;
+        }
+        
+        if (last_scan_pos < 16)
+            significant_coeff_flag[last_scan_pos] = 1;
+        for (n = n_end; n >= 0; n--) {
             GET_COORD(offset, n);
 
-            if ((n + offset) < (num_coeff - 1) &&
-                s->rc.significant_coeff_group_flag[x_cg][y_cg] &&
+            if (s->rc.significant_coeff_group_flag[x_cg][y_cg] &&
                 (n > 0 || implicit_non_zero_coeff == 0)) {
                 significant_coeff_flag[n] =
                 ff_hevc_significant_coeff_flag_decode(s, c_idx, x_c, y_c, log2_trafo_size, scan_idx);
@@ -637,8 +649,7 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
             } else {
                 int last_cg = (x_c == (x_cg << 2) && y_c == (y_cg << 2));
                 significant_coeff_flag[n] =
-                ((n + offset) == (num_coeff - 1) ||
-                 (last_cg && implicit_non_zero_coeff &&
+                ((last_cg && implicit_non_zero_coeff &&
                   s->rc.significant_coeff_group_flag[x_cg][y_cg])); // not in spec
             }
             av_dlog(s->avctx, AV_LOG_DEBUG, "significant_coeff_flag(%d, %d): %d\n",
@@ -646,11 +657,13 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
 
         }
 
+        n_end = (i == num_last_subset)? last_scan_pos: 15;
+
         first_nz_pos_in_cg = 16;
         last_nz_pos_in_cg = -1;
         num_sig_coeff = 0;
         first_greater1_coeff_idx = -1;
-        for (n = 15; n >= 0; n--) {
+        for (n = n_end; n >= 0; n--) {
             if (significant_coeff_flag[n]) {
                 if (num_sig_coeff < 8) {
                     coeff_abs_level_greater1_flag[n] =
@@ -680,7 +693,7 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
                    coeff_abs_level_greater2_flag[first_greater1_coeff_idx]);
         }
 
-        for (n = 15; n >= 0; n--) {
+        for (n = n_end; n >= 0; n--) {
             if (significant_coeff_flag[n] &&
                 (!s->pps->sign_data_hiding_flag || !sign_hidden ||
                  n != first_nz_pos_in_cg)) {
