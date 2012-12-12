@@ -38,6 +38,7 @@
 #define cabac_printf printf
 #define check_cabac_printf
 #define dsp_printf
+#define DISPLAY_EN
 #else
 #define header_printf
 #define cabac_printf
