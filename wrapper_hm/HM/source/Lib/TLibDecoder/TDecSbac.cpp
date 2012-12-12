@@ -257,8 +257,10 @@ Void TDecSbac::xReadEpExGolomb( UInt& ruiSymbol, UInt uiCount )
 
 Void TDecSbac::xReadUnarySymbol( UInt& ruiSymbol, ContextModel* pcSCModel, Int iOffset )
 {
+#if DEBUG_CABAC
   fprintf( g_hTrace," xReadUnarySymbol ==>\n");
-  m_pcTDecBinIf->decodeBin( ruiSymbol, pcSCModel[0] );
+#endif
+    m_pcTDecBinIf->decodeBin( ruiSymbol, pcSCModel[0] );
   
   if( !ruiSymbol )
   {
@@ -446,8 +448,10 @@ Void TDecSbac::parseIPCMInfo ( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth
 
 Void TDecSbac::parseCUTransquantBypassFlag( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth )
 {
+#if DEBUG_CABAC
   fprintf( g_hTrace," parseCUTransquantBypassFlag ==>\n");
-  UInt uiSymbol;
+#endif
+    UInt uiSymbol;
   m_pcTDecBinIf->decodeBin( uiSymbol, m_CUTransquantBypassFlagSCModel.get( 0, 0, 0 ) );
   pcCU->setCUTransquantBypassSubParts(uiSymbol ? true : false, uiAbsPartIdx, uiDepth);
 }
@@ -1050,8 +1054,10 @@ Void TDecSbac::parseQtRootCbf( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth
 
 Void TDecSbac::parseDeltaQP( TComDataCU* pcCU, UInt uiAbsPartIdx, UInt uiDepth )
 {
+#if DEBUG_CABAC
   fprintf( g_hTrace,"DeltaQP ==>\n");
-  Int qp;
+#endif
+    Int qp;
   UInt uiDQp;
   Int  iDQp;
   
