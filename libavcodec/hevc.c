@@ -28,7 +28,7 @@
 #include "hevcdata.h"
 #include "hevc.h"
 
-#define HM
+//#define HM
 #ifdef HM
     #include "wrapper/wrapper.h"
 #endif
@@ -297,14 +297,14 @@ static int hls_slice_header(HEVCContext *s)
             if (sh->slice_temporal_mvp_enable_flag) {
                 if (sh->slice_type == B_SLICE) {
                     sh->collocated_from_l0_flag = get_bits1(gb);
-                    header_printf("          collocated_from_l0_flag                         u(1) : %d\n", sh->collocated_from_l0_flag);
+                    header_printf("          collocated_from_l0_flag                  u(1) : %d\n", sh->collocated_from_l0_flag);
                 }
                 if ( (sh->collocated_from_l0_flag &&
                     sh->num_ref_idx_l0_active > 1) ||
                     (!sh->collocated_from_l0_flag &&
                      sh->num_ref_idx_l0_active > 1) ) {
                         sh->collocated_ref_idx = get_ue_golomb(gb);
-                        header_printf("          collocated_ref_idx                         ue(v) : %d\n", sh->collocated_ref_idx);
+                        header_printf("          collocated_ref_idx                       u(v) : %d\n", sh->collocated_ref_idx);
                 }
             }
             
