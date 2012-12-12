@@ -50,7 +50,9 @@ TDecBinCABAC::~TDecBinCABAC()
 }
 
 void TDecBinCABAC::printStatus() {
+#if DEBUG_CABAC
   fprintf( g_hTrace,"codIRange := %d codIOffset := %d\n", m_uiRange, m_uiValue>>7);
+#endif
 }
 
 Void
