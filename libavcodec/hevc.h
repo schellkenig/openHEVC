@@ -639,7 +639,7 @@ int ff_hevc_coeff_abs_level_greater1_flag_decode(HEVCContext *s, int c_idx,
 int ff_hevc_coeff_abs_level_greater2_flag_decode(HEVCContext *s, int c_idx,
                                                  int i, int n);
 int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int n, int base_level);
-int ff_hevc_coeff_sign_flag(HEVCContext *s);
+int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb);
 
 static const char* SyntaxElementName[] = {
 	"SAO_MERGE_FLAG",

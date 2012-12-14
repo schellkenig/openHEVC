@@ -359,6 +359,7 @@ static int hls_slice_header(HEVCContext *s)
     sh->slice_cb_addr_zs = sh->slice_address <<
                            (s->sps->log2_diff_max_min_coding_block_size << 1);
     check_cabac_printf("\tPOC: %d\n",s->poc);
+    cabac_printf("\tPOC: %d\n",s->poc);
     return 0;
 }
 
@@ -599,7 +600,8 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
         uint8_t significant_coeff_flag[16] = {0};
         uint8_t coeff_abs_level_greater1_flag[16] = {0};
         uint8_t coeff_abs_level_greater2_flag[16] = {0};
-        uint8_t coeff_sign_flag[16] = {0};
+        uint16_t coeff_sign_flag;
+        uint8_t nb_significant_coeff_flag = 0;
 
         int first_elem;
 
@@ -659,6 +661,7 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
         first_greater1_coeff_idx = -1;
         for (n = n_end; n >= 0; n--) {
             if (significant_coeff_flag[n]) {
+            	nb_significant_coeff_flag ++;
                 if (num_sig_coeff < 8) {
                     coeff_abs_level_greater1_flag[n] =
                     ff_hevc_coeff_abs_level_greater1_flag_decode(s, c_idx, i, n,
@@ -686,21 +689,17 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
                    first_greater1_coeff_idx,
                    coeff_abs_level_greater2_flag[first_greater1_coeff_idx]);
         }
-
-        for (n = n_end; n >= 0; n--) {
-            if (significant_coeff_flag[n] &&
-                (!s->pps->sign_data_hiding_flag || !sign_hidden ||
-                 n != first_nz_pos_in_cg)) {
-                coeff_sign_flag[n] = ff_hevc_coeff_sign_flag(s);
-                av_dlog(s->avctx, AV_LOG_DEBUG, "coeff_sign_flag[%d]: %d\n",
-                       n, coeff_sign_flag[n]);
-            }
-        }
+		if (!s->pps->sign_data_hiding_flag || !sign_hidden ) {
+            coeff_sign_flag = ff_hevc_coeff_sign_flag(s, nb_significant_coeff_flag) << (16 - nb_significant_coeff_flag);
+		} else {
+            coeff_sign_flag = ff_hevc_coeff_sign_flag(s, nb_significant_coeff_flag-1) << (16 - (nb_significant_coeff_flag - 1));
+		}
+		printf("%d : coeff_sign_flag = %d\n",nb_significant_coeff_flag, coeff_sign_flag);
 
         num_sig_coeff = 0;
         sum_abs = 0;
         first_elem = 1;
-        for (n = 15; n >= 0; n--) {
+        for (n = n_end; n >= 0; n--) {
 
             if (significant_coeff_flag[n]) {
                 GET_COORD(offset, n);
@@ -716,8 +715,9 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
                     if (n == first_nz_pos_in_cg && (sum_abs%2 == 1))
                         trans_coeff_level = -trans_coeff_level;
                 }
-                if (coeff_sign_flag[n])
+                if (coeff_sign_flag>>15)
                     trans_coeff_level = -trans_coeff_level;
+                coeff_sign_flag <<= 1;
                 num_sig_coeff++;
                 av_dlog(s->avctx, AV_LOG_DEBUG, "trans_coeff_level: %d\n",
                        trans_coeff_level);

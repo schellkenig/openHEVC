@@ -1217,7 +1217,7 @@ int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int first_elem, int base_l
     return last_coeff_abs_level_remaining;
 }
 
-int ff_hevc_coeff_sign_flag(HEVCContext *s)
+int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb)
 {
     HEVCCabacContext *cc = &s->cc;
 
@@ -1226,8 +1226,11 @@ int ff_hevc_coeff_sign_flag(HEVCContext *s)
 
     cc->ctx_idx_offset = -1;
 
-    cabac_printf(" %s ==>\n", SyntaxElementName[cc->elem]);
-    int ret = fl_binarization(s, 1);
+    cabac_printf(" %s ==> %d\n", SyntaxElementName[cc->elem], nb);
+    int ret = 0;// = fl_binarization(s, nb);
+    int i;
+    for (i = 0; i < nb; i++)
+    	ret = (ret << 1) | decode_bin(s, i);
     cabac_printf(" %s = %d\n", SyntaxElementName[cc->elem], ret);
     return ret;
 }
