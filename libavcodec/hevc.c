@@ -694,7 +694,6 @@ static void hls_residual_coding(HEVCContext *s, int x0, int y0, int log2_trafo_s
 		} else {
             coeff_sign_flag = ff_hevc_coeff_sign_flag(s, nb_significant_coeff_flag-1) << (16 - (nb_significant_coeff_flag - 1));
 		}
-		printf("%d : coeff_sign_flag = %d\n",nb_significant_coeff_flag, coeff_sign_flag);
 
         num_sig_coeff = 0;
         sum_abs = 0;
