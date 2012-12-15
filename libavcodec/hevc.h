@@ -51,6 +51,7 @@
  * Value of the luma sample at position (x, y) in the 2D array tab.
  */
 #define SAMPLE(tab, x, y) ((tab)[(y) * s->sps->pic_width_in_luma_samples + (x)])
+#define SAMPLE_CBF(tab, x, y) ((tab)[((y) & ((1<<log2_trafo_size)-1)) * MAX_CU_SIZE + ((x) & ((1<<log2_trafo_size)-1))])
 
 /**
  * Table 7-3: NAL unit type codes
@@ -85,6 +86,7 @@ typedef struct ShortTermRPS {
 #define MAX_SPS_COUNT 32
 #define MAX_PPS_COUNT 256
 #define MAX_SHORT_TERM_RPS_COUNT 64
+#define MAX_CU_SIZE 128
 
 //TODO: check if this is really the maximum
 #define MAX_TRANSFORM_DEPTH 3
@@ -496,7 +498,6 @@ typedef struct PredictionUnit {
 } PredictionUnit;
 
 typedef struct TransformTree {
-    uint8_t *split_transform_flag[MAX_TRANSFORM_DEPTH];
     uint8_t *cbf_cb[MAX_TRANSFORM_DEPTH];
     uint8_t *cbf_cr[MAX_TRANSFORM_DEPTH];
     uint8_t cbf_luma;
