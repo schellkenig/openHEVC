@@ -483,6 +483,22 @@ enum IntraPredMode {
     INTRA_ANGULAR_33,
     INTRA_ANGULAR_34
 };
+typedef  short  Short;
+
+typedef struct Mv {
+    Short m_iHor;     ///< horizontal component of motion vector
+    Short m_iVer;     ///< vertical component of motion vector
+}Mv;
+
+typedef struct MvField {
+      Mv   acMv;
+      int  RefIdx;
+      int predFlag;
+      int isIntra;
+}MvField;
+
+// MERGE
+#define MRG_MAX_NUM_CANDS     5
 
 typedef struct PredictionUnit {
     uint8_t merge_flag;
@@ -495,6 +511,9 @@ typedef struct PredictionUnit {
 
     uint8_t *top_ipm;
     uint8_t *left_ipm;
+    uint8_t *tab_ipm;
+
+    MvField *tab_mvf;
 } PredictionUnit;
 
 typedef struct TransformTree {
