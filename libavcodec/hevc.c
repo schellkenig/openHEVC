@@ -75,9 +75,10 @@ static int pic_arrays_init(HEVCContext *s)
         return -1;
 
     for (i = 0; i < MAX_TRANSFORM_DEPTH; i++) {
-        s->tt.cbf_cb[i] = av_malloc(MAX_CU_SIZE*MAX_CU_SIZE);
-        s->tt.cbf_cr[i] = av_malloc(MAX_CU_SIZE*MAX_CU_SIZE);
-        if (!s->tt.cbf_cb[i] ||
+        s->tt.split_transform_flag[i] = av_malloc(pic_size);
+        s->tt.cbf_cb[i] = av_malloc(pic_size);
+        s->tt.cbf_cr[i] = av_malloc(pic_size);
+        if (!s->tt.split_transform_flag[i] || !s->tt.cbf_cb[i] ||
             !s->tt.cbf_cr[i])
             return -1;
     }
@@ -98,6 +99,7 @@ static void pic_arrays_free(HEVCContext *s)
     av_freep(&s->pu.tab_mvf);
 
     for (i = 0; i < MAX_TRANSFORM_DEPTH; i++) {
+        av_freep(&s->tt.split_transform_flag[i]);
         av_freep(&s->tt.cbf_cb[i]);
         av_freep(&s->tt.cbf_cr[i]);
     }
@@ -796,8 +798,8 @@ static void hls_transform_unit(HEVCContext *s, int x0, int  y0, int xBase, int y
     }
 
     if (s->tt.cbf_luma ||
-        SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0) ||
-        SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0)) {
+        SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) ||
+        SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0)) {
         if (s->pps->cu_qp_delta_enabled_flag && !s->tu.is_cu_qp_delta_coded) {
             av_dlog(s->avctx, AV_LOG_ERROR, "TODO: cu_qp_delta_enabled_flag\n");
             s->tu.is_cu_qp_delta_coded = 1;
@@ -824,14 +826,14 @@ static void hls_transform_unit(HEVCContext *s, int x0, int  y0, int xBase, int y
         if (s->tt.cbf_luma)
             hls_residual_coding(s, x0, y0, log2_trafo_size, scan_idx, 0);
         if (log2_trafo_size > 2) {
-            if (SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0))
+            if (SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0))
                 hls_residual_coding(s, x0, y0, log2_trafo_size - 1, scan_idx_c, 1);
-            if (SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0))
+            if (SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0))
                 hls_residual_coding(s, x0, y0, log2_trafo_size - 1, scan_idx_c, 2);
         } else if (blk_idx == 3) {
-            if (SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], xBase, yBase))
+            if (SAMPLE(s->tt.cbf_cb[trafo_depth], xBase, yBase))
                 hls_residual_coding(s, xBase, yBase, log2_trafo_size, scan_idx_c, 1);
-            if (SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], xBase, yBase))
+            if (SAMPLE(s->tt.cbf_cr[trafo_depth], xBase, yBase))
                 hls_residual_coding(s, xBase, yBase, log2_trafo_size, scan_idx_c, 2);
         }
     } 
@@ -849,11 +851,10 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
     cabac_printf("read_TransformTree.start\n");
 #endif
 
-    uint8_t split_transform_flag;
-    SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0) =
-    SAMPLE_CBF(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
-    SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0) =
-    SAMPLE_CBF(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase);
+    SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
+    SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase);
+    SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
+    SAMPLE(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase);
 
     if (s->cu.intra_split_flag) {
         if (trafo_depth == 1)
@@ -873,10 +874,10 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
         log2_trafo_size > s->sps->log2_min_transform_block_size &&
         trafo_depth < s->cu.max_trafo_depth &&
         !(s->cu.intra_split_flag && trafo_depth == 0)) {
-    	split_transform_flag =
+        SAMPLE(s->tt.split_transform_flag[trafo_depth], x0, y0) =
         ff_hevc_split_transform_flag_decode(s, log2_trafo_size);
     } else {
-    	split_transform_flag =
+        SAMPLE(s->tt.split_transform_flag[trafo_depth], x0, y0) =
         (log2_trafo_size >
          s->sps->log2_min_transform_block_size +
          s->sps->log2_diff_max_min_coding_block_size ||
@@ -885,21 +886,21 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
     }
 
     if (trafo_depth == 0 || log2_trafo_size > 2) {
-        if (trafo_depth == 0 || SAMPLE_CBF(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase)) {
-            SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0) =
+        if (trafo_depth == 0 || SAMPLE(s->tt.cbf_cb[trafo_depth - 1], xBase, yBase)) {
+            SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) =
             ff_hevc_cbf_cb_cr_decode(s, trafo_depth);
             av_dlog(s->avctx, AV_LOG_DEBUG,
-                   "cbf_cb: %d\n", SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0));
+                   "cbf_cb: %d\n", SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0));
         }
-        if (trafo_depth == 0 || SAMPLE_CBF(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase)) {
-            SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0) =
+        if (trafo_depth == 0 || SAMPLE(s->tt.cbf_cr[trafo_depth - 1], xBase, yBase)) {
+            SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0) =
             ff_hevc_cbf_cb_cr_decode(s, trafo_depth);
             av_dlog(s->avctx, AV_LOG_DEBUG,
-                   "cbf_cr: %d\n", SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0));
+                   "cbf_cr: %d\n", SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0));
         }
     }
 
-    if (split_transform_flag) {
+    if (SAMPLE(s->tt.split_transform_flag[trafo_depth], x0, y0)) {
         int x1 = x0 + (( 1 << log2_trafo_size ) >> 1);
         int y1 = y0 + (( 1 << log2_trafo_size ) >> 1);
 
@@ -913,8 +914,8 @@ static void hls_transform_tree(HEVCContext *s, int x0, int y0,
                            log2_trafo_size - 1, trafo_depth + 1, 3);
     } else {
         if (s->cu.pred_mode == MODE_INTRA || trafo_depth != 0 ||
-            SAMPLE_CBF(s->tt.cbf_cb[trafo_depth], x0, y0) ||
-            SAMPLE_CBF(s->tt.cbf_cr[trafo_depth], x0, y0))
+            SAMPLE(s->tt.cbf_cb[trafo_depth], x0, y0) ||
+            SAMPLE(s->tt.cbf_cr[trafo_depth], x0, y0))
             s->tt.cbf_luma = ff_hevc_cbf_luma_decode(s, trafo_depth);
 
         hls_transform_unit(s, x0, y0, xBase,
