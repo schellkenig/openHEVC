@@ -134,6 +134,15 @@ static const uint8_t init_values[] = {
  * mps and pstate, indexed by ctx_idx
  */
 static uint8_t states[sizeof(init_values)][2];
+static uint8_t statesWPP[sizeof(init_values)][2];
+void save_states()
+{
+	memcpy(statesWPP,states, sizeof(states));
+}
+void load_states()
+{
+	memcpy(states,statesWPP, sizeof(states));
+}
 
 static int derive_ctx_idx(HEVCContext *s, int bin_idx)
 {
@@ -334,6 +343,19 @@ void ff_hevc_cabac_init(HEVCContext *s)
         states[i][1] = states[i][0] ? (pre_ctx_state - 64) : (63 - pre_ctx_state); //stateIdx
     }
 }
+void ff_hevc_cabac_reinit(HEVCContext *s)
+{
+    int i;
+    int n;
+    HEVCCabacContext *cc = &s->cc;
+    GetBitContext *gb = &s->gb;
+
+    n = -get_bits_count(gb) & 7;
+    if (n) skip_bits(gb, n);
+    cc->range = 510;
+    cc->offset = get_bits(gb, 9);
+    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->offset: %d\n", cc->offset);
+}
 
 int ff_hevc_sao_merge_flag_decode(HEVCContext *s)
 {
@@ -445,6 +467,13 @@ int ff_hevc_end_of_slice_flag_decode(HEVCContext *s)
      check_cabac_printf(" END_OF_SLICE_FLAG ==>\n");
      check_cabac_printf("codIRange := %d codIOffset := %d\n",s->cc.range, s->cc.offset);
     }
+    return ret;
+}
+int ff_hevc_end_of_sub_stream_one_bit_decode(HEVCContext *s)
+{
+    cabac_printf(" END_OF_SUB_STREAM_ONE_BIT ==>\n");
+    int ret = bypass_decode_bin(s);
+    cabac_printf(" END_OF_SUB_STREAM_ONE_BIT = %d\n", ret);
     return ret;
 }
 
@@ -1226,11 +1255,11 @@ int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb)
 
     cc->ctx_idx_offset = -1;
 
-    cabac_printf(" %s ==> %d\n", SyntaxElementName[cc->elem], nb);
+    if(nb != 0 ) cabac_printf(" %s ==> %d\n", SyntaxElementName[cc->elem], nb);
     int ret = 0;// = fl_binarization(s, nb);
     int i;
     for (i = 0; i < nb; i++)
     	ret = (ret << 1) | decode_bin(s, i);
-    cabac_printf(" %s = %d\n", SyntaxElementName[cc->elem], ret);
+    if(nb != 0 ) cabac_printf(" %s = %d\n", SyntaxElementName[cc->elem], ret);
     return ret;
 }
