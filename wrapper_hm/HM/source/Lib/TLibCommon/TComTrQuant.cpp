@@ -828,7 +828,7 @@ void xTrMxN(Int bitDepth, Short *block,Short *coeff, Int iWidth, Int iHeight, UI
 */
 void xITrMxN(Int bitDepth, Short *coeff,Short *block, Int iWidth, Int iHeight, UInt uiMode, TextType eText)
 {
-#if DEBUG_TRACE_xIT_SPLITTER || DEBUG_TRACE_xIT_MERGER
+#if DEBUG_TRACE_xIT_SPLITTER or DEBUG_TRACE_xIT_MERGER
   int i;
 #endif
   Int shift_1st = SHIFT_INV_1ST;
@@ -872,14 +872,15 @@ void xITrMxN(Int bitDepth, Short *coeff,Short *block, Int iWidth, Int iHeight, U
     partialButterflyInverse32(tmp,block,shift_2nd,iHeight);
   }
 #if DEBUG_TRACE_xIT_MERGER
-    fprintf(g_hTrace,"Merger ACTION: merge_%dx%d\n", iWidth, iHeight);
+  if (eText == TEXT_LUMA) {
+    fprintf(g_hTrace,"Merger ACTION: merge_%dx%d : %s\n", iWidth, iHeight, eText == TEXT_LUMA ? "Y" : eText == TEXT_CHROMA_U ? "U" : "V");
     fprintf(g_hTrace,"------------------------\n");
-    fprintf(g_hTrace,"sizeOfTU = %d\n", iHeight;
-    for(i = 0; i <= , iWidth*iHeight - 1; i++) {
-      fprintf(g_hTrace,"res    = %d\n",coeff[i]);
+    fprintf(g_hTrace,"sizeOfTU = %d\n", iHeight);
+    for(i = 0; i <= iWidth*iHeight - 1; i++) {
+      fprintf(g_hTrace,"res    = %d\n",block[i]);
     }
-    fprintf(g_hTrace,"nbTransformUnit = \n");
     fprintf(g_hTrace,"------------------------\n");
+  }
 #endif
 }
 
@@ -1307,7 +1308,7 @@ Void TComTrQuant::invtransformNxN( Bool transQuantBypass, TextType eText, UInt u
   xDeQuant(bitDepth, pcCoeff, m_plTempCoeff, uiWidth, uiHeight, scalingListType);
   if(useTransformSkip == true)
   {
-    xITransformSkip(bitDepth, m_plTempCoeff, rpcResidual, uiStride, uiWidth, uiHeight );
+    xITransformSkip(bitDepth, m_plTempCoeff, rpcResidual, uiStride, uiWidth, uiHeight, eText );
   }
   else
   {
@@ -1480,7 +1481,7 @@ Void TComTrQuant::xTransformSkip(Int bitDepth, Pel* piBlkResi, UInt uiStride, In
  *  \param uiStride stride of input residual data
  *  \param iSize transform size (iSize x iSize)
  */
-Void TComTrQuant::xITransformSkip(Int bitDepth, Int* plCoef, Pel* pResidual, UInt uiStride, Int width, Int height )
+Void TComTrQuant::xITransformSkip(Int bitDepth, Int* plCoef, Pel* pResidual, UInt uiStride, Int width, Int height, TextType eText )
 {
   assert( width == height );
   UInt uiLog2TrSize = g_aucConvertToBit[ width ] + 2;
@@ -1499,6 +1500,18 @@ Void TComTrQuant::xITransformSkip(Int bitDepth, Int* plCoef, Pel* pResidual, UIn
         pResidual[j * uiStride + k] =  (plCoef[j*width+k] + offset) >> transformSkipShift;
       } 
     }
+#if DEBUG_TRACE_xIT_MERGER
+    int i;
+    if (eText == TEXT_LUMA) {
+    fprintf(g_hTrace,"Merger ACTION: merge_%dx%d : %s\n", width, height, eText == TEXT_LUMA ? "Y" : eText == TEXT_CHROMA_U ? "U" : "V");
+    fprintf(g_hTrace,"------------------------\n");
+    fprintf(g_hTrace,"sizeOfTU = %d\n", height);
+    for(i = 0; i <= width*height - 1; i++) {
+      fprintf(g_hTrace,"res    = %d\n", plCoef[i]>>transformSkipShift);
+    }
+    fprintf(g_hTrace,"------------------------\n");
+    }
+#endif
   }
   else
   {
@@ -1511,6 +1524,18 @@ Void TComTrQuant::xITransformSkip(Int bitDepth, Int* plCoef, Pel* pResidual, UIn
         pResidual[j * uiStride + k] =  plCoef[j*width+k] << transformSkipShift;
       }
     }
+#if DEBUG_TRACE_xIT_MERGER
+    int i;
+    if (eText == TEXT_LUMA) {
+    fprintf(g_hTrace,"Merger ACTION: merge_%dx%d : %s\n", width, height, eText == TEXT_LUMA ? "Y" : eText == TEXT_CHROMA_U ? "U" : "V");
+    fprintf(g_hTrace,"------------------------\n");
+    fprintf(g_hTrace,"sizeOfTU = %d\n", height);
+    for(i = 0; i <= width*height - 1; i++) {
+      fprintf(g_hTrace,"res    = %d\n", plCoef[i]<<transformSkipShift);
+    }
+    fprintf(g_hTrace,"------------------------\n");
+    }
+#endif
   }
 }
 

@@ -313,7 +313,7 @@ __inline Int xGetICRate  ( UInt                            uiAbsLevel,
   Void xIT    (Int bitDepth, UInt uiMode, Int* plCoef, Pel* pResidual, UInt uiStride, Int iWidth, Int iHeight, TextType eText );
   
   // inverse skipping transform
-  Void xITransformSkip (Int bitDepth, Int* plCoef, Pel* pResidual, UInt uiStride, Int width, Int height );
+  Void xITransformSkip (Int bitDepth, Int* plCoef, Pel* pResidual, UInt uiStride, Int width, Int height , TextType eText);
 };// END CLASS DEFINITION TComTrQuant
 
 //! \}
