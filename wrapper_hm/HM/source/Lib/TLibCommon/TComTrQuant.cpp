@@ -1507,7 +1507,7 @@ Void TComTrQuant::xITransformSkip(Int bitDepth, Int* plCoef, Pel* pResidual, UIn
     fprintf(g_hTrace,"------------------------\n");
     fprintf(g_hTrace,"sizeOfTU = %d\n", height);
     for(i = 0; i <= width*height - 1; i++) {
-      fprintf(g_hTrace,"res    = %d\n", plCoef[i]>>transformSkipShift);
+      fprintf(g_hTrace,"res    = %d\n", (plCoef[i]+offset)>>transformSkipShift);
     }
     fprintf(g_hTrace,"------------------------\n");
     }
