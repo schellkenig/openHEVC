@@ -36,11 +36,13 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
     int k0 = 0;
     int k1 = 0;
     int k  = 0;
+    int delta_poc_s0_minus1, delta_poc_s1_minus1;
+    int used_by_curr_pic_s0_flag, used_by_curr_pic_s1_flag;
     int i;
 	GetBitContext *gb = &s->gb;
 
     ShortTermRPS *rps = &sps->short_term_rps_list[idx];
-    ShortTermRPS *rps_rIdx;
+    ShortTermRPS *rps_ridx;
 
     if (idx!=0) {
         rps->inter_ref_pic_set_prediction_flag = get_bits1(gb);
@@ -52,13 +54,13 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
     	    delta_idx = get_ue_golomb(gb) + 1;
             header_printf("          delta_idx_minus1                         u(v) : %d\n", delta_idx-1);
     	}
-    	rps_rIdx = &sps->short_term_rps_list[idx - delta_idx];
+        rps_ridx = &sps->short_term_rps_list[idx - delta_idx];
     	rps->delta_rps_sign = get_bits1(gb);
         header_printf("          delta_rps_sign                           u(1) : %d\n", rps->delta_rps_sign);
 	    rps->abs_delta_rps = get_ue_golomb(gb) + 1;
         header_printf("          abs_delta_rps_minus1                     u(v) : %d\n", rps->abs_delta_rps-1);
-	    delta_rps = (1 - (rps_rIdx->delta_rps_sign<<1)) * rps->abs_delta_rps;
-	    for( i = 0; i <= rps_rIdx->num_delta_pocs; i++ ) {
+	    delta_rps = (1 - (rps_ridx->delta_rps_sign<<1)) * rps->abs_delta_rps;
+	    for( i = 0; i <= rps_ridx->num_delta_pocs; i++ ) {
     		used_by_curr_pic_flag = get_bits1(gb);
             header_printf("          used_by_curr_pic_flag                    u(1) : %d\n", used_by_curr_pic_flag);
    	    if( !used_by_curr_pic_flag ) {
@@ -66,8 +68,8 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
                 header_printf("          use_delta_flag                           u(1) : %d\n", use_delta_flag);
     	    }
     	    if (used_by_curr_pic_flag || use_delta_flag) {
-    	    	if (i < rps_rIdx->num_delta_pocs)
-    	    		delta_poc = delta_rps + rps_rIdx->delta_poc;
+    	    	if (i < rps_ridx->num_delta_pocs)
+    	    		delta_poc = delta_rps + rps_ridx->delta_poc;
     	    	else
     	    		delta_poc = delta_rps;
     	    	if (delta_poc < 0)

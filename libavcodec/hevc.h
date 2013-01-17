@@ -421,9 +421,9 @@ enum PredMode {
 };
 
 enum InterPredIdc {
-	Pred_L0 = 0,
-	Pred_L1,
-	Pred_BI
+    PRED_L0 = 0,
+    PRED_L1,
+    PRED_BI
 };
 
 typedef struct CodingTree {
@@ -486,11 +486,10 @@ enum IntraPredMode {
     INTRA_ANGULAR_33,
     INTRA_ANGULAR_34
 };
-typedef  short  Short;
 
 typedef struct Mv {
-    Short m_iHor;     ///< horizontal component of motion vector
-    Short m_iVer;     ///< vertical component of motion vector
+    int16_t m_iHor;     ///< horizontal component of motion vector
+    int16_t m_iVer;     ///< vertical component of motion vector
 }Mv;
 
 typedef struct MvField {
@@ -545,6 +544,13 @@ enum SAOType {
     SAO_EDGE
 };
 
+enum SAOEOClass {
+    SAO_EO_HORIZ = 0,
+    SAO_EO_VERT,
+    SAO_EO_135D,
+    SAO_EO_45D
+};
+
 typedef struct SAOParams {
     uint8_t type_idx[3]; ///< sao_type_idx
 
@@ -562,6 +568,7 @@ typedef struct SAOParams {
 typedef struct HEVCContext {
     AVCodecContext *avctx;
     AVFrame frame;
+    AVFrame sao_frame;
 
     HEVCPredContext *hpc[3];
     HEVCDSPContext *hevcdsp[3];

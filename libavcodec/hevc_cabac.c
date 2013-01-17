@@ -108,23 +108,37 @@ static const uint8_t init_values[] = {
      94, 138, 182, 149, 107, 167, 149,  92, 167, // cbf_cb, cbf_cr
     139, 139, 139, 139, 139, 139, // transform_skip_flag
     // last_significant_coeff_x_prefix
-	110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
-	125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
-	125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
+    110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111, 79,
+    108, 123, 63, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU,
+    125, 110, 94, 110, 95, 79, 125, 111, 110, 78, 110, 111, 111, 95, 94, 108,
+    123, 108, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, 125,
+    110, 124, 110, 95, 94, 125, 111, 111, 79, 125, 126, 111, 111, 79, 108, 123,
+    93, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU,
     // last_significant_coeff_y_prefix
-	110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111,  79, 108, 123,  63,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
-	125, 110,  94, 110,  95,  79, 125, 111, 110,  78, 110, 111, 111,  95,  94, 108, 123, 108,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
-	125, 110, 124, 110,  95,  94, 125, 111, 111,  79, 125, 126, 111, 111,  79, 108, 123,  93,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,  CNU,
+    110, 110, 124, 125, 140, 153, 125, 127, 140, 109, 111, 143, 127, 111, 79,
+    108, 123, 63, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU,
+    125, 110, 94, 110, 95, 79, 125, 111, 110, 78, 110, 111, 111, 95, 94, 108,
+    123, 108, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, 125,
+    110, 124, 110, 95, 94, 125, 111, 111, 79, 125, 126, 111, 111, 79, 108, 123,
+    93, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU, CNU,
 	// significant_coeff_group_flag
 	91, 171, 134, 141, 121, 140,  61, 154, 121, 140,  61, 154,
     // significant_coeff_flag
-	111, 111, 125, 110, 110,  94, 124, 108, 124, 107, 125, 141, 179, 153, 125, 107, 125, 141, 179, 153, 125, 107, 125, 141, 179, 153, 125, 140, 139, 182, 182, 152, 136, 152, 136, 153, 136, 139, 111, 136, 139, 111,
-	155, 154, 139, 153, 139, 123, 123,  63, 153, 166, 183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 123, 123, 107, 121, 107, 121, 167, 151, 183, 140, 151, 183, 140,
-	170, 154, 139, 153, 139, 123, 123,  63, 124, 166, 183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 138, 138, 122, 121, 122, 121, 167, 151, 183, 140, 151, 183, 140,
+    111, 111, 125, 110, 110, 94, 124, 108, 124, 107, 125, 141, 179, 153, 125,
+    107, 125, 141, 179, 153, 125, 107, 125, 141, 179, 153, 125, 140, 139, 182,
+    182, 152, 136, 152, 136, 153, 136, 139, 111, 136, 139, 111, 155, 154, 139,
+    153, 139, 123, 123, 63, 153, 166, 183, 140, 136, 153, 154, 166, 183, 140,
+    136, 153, 154, 166, 183, 140, 136, 153, 154, 170, 153, 123, 123, 107, 121,
+    107, 121, 167, 151, 183, 140, 151, 183, 140, 170, 154, 139, 153, 139, 123,
+    123, 63, 124, 166, 183, 140, 136, 153, 154, 166, 183, 140, 136, 153, 154,
+    166, 183, 140, 136, 153, 154, 170, 153, 138, 138, 122, 121, 122, 121, 167,
+    151, 183, 140, 151, 183, 140,
 	// coeff_abs_level_greater1_flag
-	140,  92, 137, 138, 140, 152, 138, 139, 153,  74, 149,  92, 139, 107, 122, 152, 140, 179, 166, 182, 140, 227, 122, 197,
-	154, 196, 196, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153, 121, 136, 137, 169, 194, 166, 167, 154, 167, 137, 182,
-	154, 196, 167, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153, 121, 136, 122, 169, 208, 166, 167, 154, 152, 167, 182,
+    140, 92, 137, 138, 140, 152, 138, 139, 153, 74, 149, 92, 139, 107, 122, 152,
+    140, 179, 166, 182, 140, 227, 122, 197, 154, 196, 196, 167, 154, 152, 167,
+    182, 182, 134, 149, 136, 153, 121, 136, 137, 169, 194, 166, 167, 154, 167,
+    137, 182, 154, 196, 167, 167, 154, 152, 167, 182, 182, 134, 149, 136, 153,
+    121, 136, 122, 169, 208, 166, 167, 154, 152, 167, 182,
     // coeff_abs_level_greater2_flag
     138, 153, 136, 167, 152, 152,
     107, 167,  91, 122, 107, 167,
@@ -175,7 +189,7 @@ static int decode_bin(HEVCContext *s, int bin_idx)
     int ctx_idx, mps, pstate, lpsrange, bin_val;
     uint8_t *state;
 
-    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->elem: %d, ", cc->elem);
+    av_dlog(s->avctx, "cc->elem: %d, ", cc->elem);
 
     // Bypass decoding
     if (cc->ctx_idx_offset == -1) {
@@ -187,7 +201,7 @@ static int decode_bin(HEVCContext *s, int bin_idx)
         } else {
             bin_val = 0;
         }
-        av_dlog(s->avctx, AV_LOG_DEBUG, "bypass bin_val: %d\n", bin_val);
+        av_dlog(s->avctx, "bypass bin_val: %d\n", bin_val);
     	cabac_printf("codIRange := %d codIOffset := %d binVal := %d\n",cc->range, cc->offset, bin_val);
         return bin_val;
     }
@@ -202,10 +216,10 @@ static int decode_bin(HEVCContext *s, int bin_idx)
     lpsrange = ff_lps_range[pstate][(cc->range >> 6) & 3];
     bin_val = 0;
 
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "ctx_idx: %d, %d#pstate: %d, mps: %d\n", ctx_idx, cnt++, pstate, mps);
 
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "old cc->range: %d, cc->offset: %d, lpsrange: %d\n", cc->range, cc->offset, lpsrange);
 
     cc->range -= lpsrange;
@@ -225,7 +239,7 @@ static int decode_bin(HEVCContext *s, int bin_idx)
 
     renormalization(s);
 
-    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->range: %d, cc->offset: %d, bin_val: %d\n",
+    av_dlog(s->avctx, "cc->range: %d, cc->offset: %d, bin_val: %d\n",
            cc->range, cc->offset, bin_val);
     cabac_printf("codIRange := %d codIOffset := %d state := %d mps := %d binVal := %d\n",cc->range, cc->offset, state[1], state[0], bin_val);
     return bin_val;
@@ -243,7 +257,7 @@ static int bypass_decode_bin(HEVCContext *s)
         bin_val = 0;
         renormalization(s);
     }
-    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->range: %d, cc->offset: %d, bin_val: %d\n",
+    av_dlog(s->avctx, "cc->range: %d, cc->offset: %d, bin_val: %d\n",
            cc->range, cc->offset, bin_val);
     cabac_printf("codIRange := %d codIOffset := %d binVal := %d\n",cc->range, cc->offset, bin_val);
     return bin_val;
@@ -323,7 +337,7 @@ void ff_hevc_cabac_init(HEVCContext *s)
 
     cc->range = 510;
     cc->offset = get_bits(gb, 9);
-    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->offset: %d\n", cc->offset);
+    av_dlog(s->avctx, "cc->offset: %d\n", cc->offset);
 
     cc->init_type = 2 - s->sh.slice_type;
     if (s->sh.cabac_init_flag && s->sh.slice_type != I_SLICE)
@@ -354,7 +368,7 @@ void ff_hevc_cabac_reinit(HEVCContext *s)
     if (n) skip_bits(gb, n);
     cc->range = 510;
     cc->offset = get_bits(gb, 9);
-    av_dlog(s->avctx, AV_LOG_DEBUG, "cc->offset: %d\n", cc->offset);
+    av_dlog(s->avctx, "cc->offset: %d\n", cc->offset);
 }
 
 int ff_hevc_sao_merge_flag_decode(HEVCContext *s)
@@ -498,8 +512,10 @@ int ff_hevc_cu_transquant_bypass_flag_decode(HEVCContext *s)
 int ff_hevc_skip_flag_decode(HEVCContext *s, int x_cb, int y_cb)
 {
 	HEVCCabacContext *cc = &s->cc;
-    const int8_t ctx_idx_inc[1] = { (x_cb > 0 ? SAMPLE(s->cu.skip_flag, x_cb-1, y_cb) : 0) +
-    								(y_cb > 0 ? SAMPLE(s->cu.skip_flag, x_cb, y_cb-1) : 0)};
+    const int8_t ctx_idx_inc[1] = {
+        (x_cb > 0 ? SAMPLE(s->cu.skip_flag, x_cb-1, y_cb) : 0) +
+        (y_cb > 0 ? SAMPLE(s->cu.skip_flag, x_cb, y_cb-1) : 0)
+    };
 
     cc->elem = SKIP_FLAG;
     cc->state = states + elem_offset[cc->elem];
@@ -546,7 +562,7 @@ int ff_hevc_split_coding_unit_flag_decode(HEVCContext *s, int ct_depth, int x0, 
     cc->elem = SPLIT_CODING_UNIT_FLAG;
     cc->state = states + elem_offset[cc->elem];
 
-    av_dlog(s->avctx, AV_LOG_DEBUG, "depth cur: %d, left: %d, top: %d\n",
+    av_dlog(s->avctx, "depth cur: %d, left: %d, top: %d\n",
            ct_depth, depth_left, depth_top);
 
     ctx_idx_inc[0] += (depth_left > ct_depth);
@@ -763,12 +779,12 @@ int ff_hevc_inter_pred_idc_decode(HEVCContext *s, int max)
 
     cabac_printf(" %s ==> %d\n", SyntaxElementName[cc->elem], ctx_idx_inc[0]);
 	if (s->cu.part_mode == PART_2Nx2N || max != 8) {
-		ret = decode_bin(s, 0) + Pred_L0;
+        ret = decode_bin(s, 0) + PRED_L0;
 	}
 	if (ret == 0) {
-		ret = decode_bin(s, 1) + Pred_L0;
+        ret = decode_bin(s, 1) + PRED_L0;
 	} else {
-		ret = Pred_BI;
+        ret = PRED_BI;
 	}
 
     cabac_printf(" %s = %d\n", SyntaxElementName[cc->elem], ret);
@@ -1083,7 +1099,7 @@ int ff_hevc_significant_coeff_flag_decode(HEVCContext *s, int c_idx, int x_c, in
             prev_sig += s->rc.significant_coeff_group_flag[x_cg + 1][y_cg];
         if (y_cg < ((1 << log2_trafo_size) - 1)>>2)
             prev_sig += (s->rc.significant_coeff_group_flag[x_cg][y_cg + 1] << 1);
-        av_dlog(s->avctx, AV_LOG_DEBUG, "prev_sig: %d\n", prev_sig);
+        av_dlog(s->avctx, "prev_sig: %d\n", prev_sig);
 
         switch (prev_sig) {
         case 0:
@@ -1208,7 +1224,7 @@ int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int first_elem, int base_l
     if (first_elem) {
         c_rice_param = 0;
         last_coeff_abs_level_remaining = 0;
-        av_dlog(s->avctx, AV_LOG_DEBUG,
+        av_dlog(s->avctx,
                "c_rice_param reset to 0\n");
     }
 
@@ -1225,21 +1241,21 @@ int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int first_elem, int base_l
                                           << c_rice_param) + suffix;
     }
 
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "coeff_abs_level_remaining c_rice_param: %d\n", c_rice_param);
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "coeff_abs_level_remaining base_level: %d, prefix: %d, suffix: %d\n",
            base_level, prefix, suffix);
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "coeff_abs_level_remaining: %d\n",
            last_coeff_abs_level_remaining);
 
-    av_dlog(s->avctx, AV_LOG_DEBUG, "last_coeff_(%d) > %d\n", base_level + last_coeff_abs_level_remaining, 3*(1<<(c_rice_param)));
+    av_dlog(s->avctx, "last_coeff_(%d) > %d\n", base_level + last_coeff_abs_level_remaining, 3*(1<<(c_rice_param)));
 
     c_rice_param = FFMIN(c_rice_param +
                          ((base_level + last_coeff_abs_level_remaining) >
                           (3 * (1 << c_rice_param))), 4);
-    av_dlog(s->avctx, AV_LOG_DEBUG,
+    av_dlog(s->avctx,
            "new c_rice_param: %d\n", c_rice_param);
 
     cabac_printf(" %s = %d\n", SyntaxElementName[cc->elem], last_coeff_abs_level_remaining);
