@@ -59,19 +59,21 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
         header_printf("          delta_rps_sign                           u(1) : %d\n", rps->delta_rps_sign);
 	    rps->abs_delta_rps = get_ue_golomb(gb) + 1;
         header_printf("          abs_delta_rps_minus1                     u(v) : %d\n", rps->abs_delta_rps-1);
-	    delta_rps = (1 - (rps_ridx->delta_rps_sign<<1)) * rps->abs_delta_rps;
+	    delta_rps = (1 - (rps->delta_rps_sign<<1)) * rps->abs_delta_rps;
 	    for( i = 0; i <= rps_ridx->num_delta_pocs; i++ ) {
     		used_by_curr_pic_flag = get_bits1(gb);
             header_printf("          used_by_curr_pic_flag                    u(1) : %d\n", used_by_curr_pic_flag);
-   	    if( !used_by_curr_pic_flag ) {
+    		rps->used[k] = used_by_curr_pic_flag;
+    		if( !used_by_curr_pic_flag ) {
     	    	use_delta_flag = get_bits1(gb);
                 header_printf("          use_delta_flag                           u(1) : %d\n", use_delta_flag);
     	    }
     	    if (used_by_curr_pic_flag || use_delta_flag) {
     	    	if (i < rps_ridx->num_delta_pocs)
-    	    		delta_poc = delta_rps + rps_ridx->delta_poc;
+    	    		delta_poc = delta_rps + rps_ridx->delta_poc[i];
     	    	else
     	    		delta_poc = delta_rps;
+    	    	rps->delta_poc[k] = delta_poc;
     	    	if (delta_poc < 0)
     	    		k0++;
     	    	else
@@ -82,24 +84,65 @@ int ff_hevc_decode_short_term_rps(HEVCContext *s, int idx, SPS *sps)
 	    rps->num_delta_pocs    = k;
 	    rps->num_negative_pics = k0;
 	    rps->num_positive_pics = k1;
+		// sort in increasing order (smallest first)
+		if ( rps->num_delta_pocs != 0 ) {
+			int used, tmp;
+    		for (i = 1; i < rps->num_delta_pocs; i++) {
+    			delta_poc = rps->delta_poc[i];
+    			used      = rps->used[i];
+   				for (k = i-1 ; k >= 0;  k--) {
+   					tmp = rps->delta_poc[k];
+   					if (delta_poc < tmp ) {
+   						rps->delta_poc[k+1] = tmp;
+   						rps->used[k+1]      = rps->used[k];
+   						rps->delta_poc[k]   = delta_poc;
+   						rps->used[k]        = used;
+   					}
+   				}
+    		}
+		}
+	   	if ( (rps->num_negative_pics>>1) != 0 ) {
+			int used, tmp;
+   			k = rps->num_negative_pics - 1;
+			// flip the negative values to largest first
+    		for( i = 0; i < rps->num_negative_pics>>1; i++) {
+				delta_poc          = rps->delta_poc[i];
+   				used               = rps->used[i];
+   				rps->delta_poc[i]  = rps->delta_poc[k];
+   				rps->used[i]       = rps->used[k];
+   				rps->delta_poc[k]  = delta_poc;
+   				rps->used[k]       = used;
+   				k--;
+    		}
+	   	}
     } else {
+    	int prev;
         rps->num_negative_pics = get_ue_golomb(gb);
         header_printf("          num_negative_pics                        u(v) : %d\n", rps->num_negative_pics);
         rps->num_positive_pics = get_ue_golomb(gb);
         header_printf("          num_positive_pics                        u(v) : %d\n", rps->num_positive_pics);
         rps->num_delta_pocs = rps->num_negative_pics + rps->num_positive_pics;
         if (rps->num_negative_pics || rps->num_positive_pics) {
+        	prev = 0;
         	for( i = 0; i < rps->num_negative_pics; i++ ) {
-                header_printf("          delta_poc_s0_minus1                      u(v) : %d\n", get_ue_golomb(gb));
-                header_printf("          used_by_curr_pic_s0_flag                 u(1) : %d\n", get_bits1(gb));
+        		delta_poc = get_ue_golomb(gb) + 1;
+                header_printf("          delta_poc_s0_minus1                      u(v) : %d\n", delta_poc-1);
+        		prev -= delta_poc;
+    	    	rps->delta_poc[i] = prev;
+        		rps->used[i] = get_bits1(gb);
+                header_printf("          used_by_curr_pic_s0_flag                 u(1) : %d\n", rps->used[i]);
         	}
+        	prev = 0;
         	for( i = 0; i < rps->num_positive_pics; i++ ) {
-                header_printf("          delta_poc_s1_minus1                      u(v) : %d\n", get_ue_golomb(gb));
-                header_printf("          used_by_curr_pic_s1_flag                 u(1) : %d\n", get_bits1(gb));
+        		delta_poc = get_ue_golomb(gb) + 1;
+                header_printf("          delta_poc_s1_minus1                      u(v) : %d\n", delta_poc);
+        		prev -= delta_poc;
+    	    	rps->delta_poc[i] = prev;
+                rps->used[i] = get_bits1(gb);
+                header_printf("          used_by_curr_pic_s1_flag                 u(1) : %d\n", rps->used[i]);
         	}
         }
     }
-
     return 0;
 }
 

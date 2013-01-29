@@ -120,7 +120,46 @@ static void compute_POC(HEVCContext *s, int iPOClsb)
 	}
 	s->poc = iPOCmsb + iPOClsb;
 }
-
+static void setRefTables(HEVCContext *s)
+{
+	int ST_CURR_BEF = 0;
+	int ST_CURR_AFT = 1;
+	int ST_FOLL     = 2;
+	int LT_CURR     = 3;
+	int LT_FOLL     = 4;
+	int i;
+	int j = 0;
+	int k = 0;
+	ShortTermRPS *rps        = s->sh.short_term_rps;
+	RefPicList   *refPicList = s->sh.refPicList;
+	if (rps == NULL) {
+		return ;
+	}
+	for (i = 0; i < rps->num_negative_pics; i ++) {
+		if ( rps->used[i] == 1 ) {
+			refPicList[ST_CURR_BEF].pocTables[j] = s->poc + rps->delta_poc[i];
+			j++;
+		} else {
+			refPicList[ST_FOLL].pocTables[k] = s->poc + rps->delta_poc[i];
+			k++;
+		}
+	}
+	refPicList[ST_CURR_BEF].numPic = j;
+	j = 0;
+    for( i = rps->num_negative_pics; i < rps->num_delta_pocs; i ++ ) {
+    	if (rps->used[i] ==1) {
+    		refPicList[ST_CURR_AFT].pocTables[j] = s->poc + rps->delta_poc[i];
+			j++;
+    	} else {
+    		refPicList[ST_FOLL].pocTables[k] = s->poc + rps->delta_poc[i];
+			k++;
+    	}
+    }
+    refPicList[ST_CURR_AFT].numPic = j;
+    refPicList[ST_FOLL].numPic = k;
+    refPicList[LT_CURR].numPic = 0;
+    refPicList[LT_FOLL].numPic = 0;
+}
 static int hls_slice_header(HEVCContext *s)
 {
     int i;
@@ -241,11 +280,12 @@ static int hls_slice_header(HEVCContext *s)
             short_term_ref_pic_set_sps_flag = get_bits1(gb);
     	    header_printf("          short_term_ref_pic_set_sps_flag          u(1) : %d\n", short_term_ref_pic_set_sps_flag);
             if (!short_term_ref_pic_set_sps_flag) {
-                av_log(s->avctx, AV_LOG_ERROR, "TODO: !short_term_ref_pic_set_sps_flag\n");
-                return -1;
+            	ff_hevc_decode_short_term_rps(s, MAX_SHORT_TERM_RPS_COUNT, s->sps);
+                sh->short_term_rps = &s->sps->short_term_rps_list[MAX_SHORT_TERM_RPS_COUNT];
             } else {
                 int short_term_ref_pic_set_idx = get_ue_golomb(gb);
         		header_printf("          short_term_ref_pic_set_idx               u(v) : %d\n", short_term_ref_pic_set_idx);
+                sh->short_term_rps = &s->sps->short_term_rps_list[short_term_ref_pic_set_idx];
             }
             if (s->sps->long_term_ref_pics_present_flag) {
                 av_log(s->avctx, AV_LOG_ERROR, "TODO: long_term_ref_pics_present_flag\n");
@@ -317,6 +357,7 @@ static int hls_slice_header(HEVCContext *s)
             sh->max_num_merge_cand = 5 - get_ue_golomb(gb);
         	header_printf("          5_minus_max_num_merge_cand               u(v) : %d\n", 5-sh->max_num_merge_cand);
         }
+    	setRefTables(s);
         sh->slice_qp_delta = get_se_golomb(gb);
     	header_printf("          slice_qp_delta                           s(v) : %d\n", sh->slice_qp_delta);
 
@@ -480,11 +521,12 @@ static void sao_filter(HEVCContext *s)
 {
     //TODO: This should be easily parallelizable
     //TODO: skip CBs when (cu_transquant_bypass_flag || (pcm_loop_filter_disable_flag && pcm_flag))
-    for (int c_idx = 0; c_idx < 3; c_idx++) {
+	int c_idx, y_ctb, x_ctb;
+    for (c_idx = 0; c_idx < 3; c_idx++) {
         int stride = s->frame.linesize[c_idx];
         int ctb_size = (1 << (s->sps->log2_ctb_size)) >> s->sps->hshift[c_idx];
-        for (int y_ctb = 0; y_ctb < s->sps->pic_height_in_ctbs; y_ctb++) {
-            for (int x_ctb = 0; x_ctb < s->sps->pic_width_in_ctbs; x_ctb++) {
+        for (y_ctb = 0; y_ctb < s->sps->pic_height_in_ctbs; y_ctb++) {
+            for (x_ctb = 0; x_ctb < s->sps->pic_width_in_ctbs; x_ctb++) {
                 struct SAOParams *sao = &CTB(s->sao, x_ctb, y_ctb);
                 int x = x_ctb * ctb_size;
                 int y = y_ctb * ctb_size;
