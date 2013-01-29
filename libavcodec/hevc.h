@@ -79,8 +79,14 @@ typedef struct ShortTermRPS {
     int delta_poc[32];
     uint8_t used[32];
 } ShortTermRPS;
+
+#define ST_CURR_BEF  0
+#define ST_CURR_AFT  1
+#define ST_FOLL      2
+#define LT_CURR      3
+#define LT_FOLL      4
 typedef struct RefPicList {
-    int pocTables[32];
+    int list[16];
     int numPic;
 } RefPicList;
 
@@ -308,7 +314,8 @@ typedef struct SliceHeader {
 
     int pic_order_cnt_lsb;
     ShortTermRPS *short_term_rps;
-    RefPicList refPicList[5];
+    RefPicList refPocList[5];
+    RefPicList refPicList[2];
 
     uint8_t no_output_of_prior_pics_flag;
 
