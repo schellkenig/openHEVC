@@ -29,9 +29,10 @@
 
 void print_delta_POC(ShortTermRPS *rps)
 {
+    int i;
     if (rps->num_delta_pocs != 0) {
         printf("DeltaPOC = { ");
-        for (int i = 0;  i < rps->num_delta_pocs; i++) {
+        for (i = 0;  i < rps->num_delta_pocs; i++) {
             printf("%d", rps->delta_poc[i]);
             if (rps->used[i] == 1)
                 printf("* ");
@@ -41,7 +42,7 @@ void print_delta_POC(ShortTermRPS *rps)
         if (rps->inter_ref_pic_set_prediction_flag == 1) {
             printf("}, RefIdc = { ");
             if (rps->num_ref_idc != 0)
-                for (int i = 0; i < rps->num_ref_idc; i++)
+                for (i = 0; i < rps->num_ref_idc; i++)
                     printf("%d ", rps->ref_idc[i]);
         }
     }
