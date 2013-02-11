@@ -1184,6 +1184,8 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     int y_pu = y0 >> s->sps->log2_min_pu_size;
     int y_puH = nPbH >> s->sps->log2_min_pu_size;
     int pic_width_in_min_pu  = s->sps->pic_width_in_min_cbs * 4;
+    int check_MER = 1;
+    int check_MER_1 =1;
 
     int check_B1;
     int xB1, yB1;
@@ -1264,8 +1266,11 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
        || isDiffMER(s, xB1, yB1, x0, y0)) {
         is_available_b1 = 0;
     }
+    if (isAvailableA1) {
+        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu]));
+    }
 
-    if (is_available_b1 && !(compareMVrefidx(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu] ))) {
+    if (is_available_b1 && check_MER) {
         available_b1_flag = 1;
         spatialCMVS[1] = s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu];
     } else {
@@ -1280,6 +1285,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     // above right spatial merge candidate
     xB0 = x0 + nPbW;
     yB0 = y0 - 1;
+    check_MER = 1;
     int xB0_pu = xB0 >> s->sps->log2_min_pu_size;
     int yB0_pu = yB0 >> s->sps->log2_min_pu_size;
     isAvailableB0 = 0;
@@ -1299,8 +1305,11 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     if((isDiffMER(s, xB0, yB0, x0, y0))) {
         isAvailableB0 = 0;
     }
+    if (is_available_b1) {
+        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu], s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu]));
+    }
 
-    if (isAvailableB0 && !(compareMVrefidx(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu], s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu]))) {
+    if (isAvailableB0 && check_MER) {
 #ifdef MV
      //   printf("x_pu=%d y_pu=%d n_x_pu = %d , n_y_pu =%d \n", x_pu, y_pu, (xB0_pu) * pic_width_in_min_pu, yB0_pu);
      //   printf("xB0=%d, yB0=%d, x0=%d, y0=%d  shift_xbx=%d, shift_xby=%d \n", xB0, yB0, x0, y0, xB0>>s->sps->log2_min_pu_size, yB0>>s->sps->log2_min_pu_size);
@@ -1319,6 +1328,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     // left bottom spatial merge candidate
     xA0 = x0 - 1;
     yA0 = y0 + nPbH;
+    check_MER = 1;
     int xA0_pu = xA0 >> s->sps->log2_min_pu_size;
     int yA0_pu = yA0 >> s->sps->log2_min_pu_size;
     isAvailableA0 = 0;
@@ -1333,8 +1343,12 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     if((isDiffMER(s, xA0, yA0, x0, y0))) {
         isAvailableA0 = 0;
     }
+    if (isAvailableA1) {
+        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu]));
+    }
 
-    if (isAvailableA0 && !(compareMVrefidx(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu]))) {
+
+    if (isAvailableA0 && check_MER) {
         available_a0_flag = 1;
         spatialCMVS[3] = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
     } else {
@@ -1349,6 +1363,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     // above left spatial merge candidate
     xB2 = x0 - 1;
     yB2 = y0 - 1;
+    check_MER = 1;
     int xB2_pu = xB2 >> s->sps->log2_min_pu_size;
     int yB2_pu = yB2 >> s->sps->log2_min_pu_size;
     isAvailableB2 = 0;
@@ -1363,11 +1378,17 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     if((isDiffMER(s, xB2, yB2, x0, y0))) {
         isAvailableB2 = 0;
     }
+    if (isAvailableA1) {
+        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu]));
+    }
+    if (is_available_b1) {
+        check_MER_1 = !(compareMVrefidx(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu], s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu]));
+    }
 
     sumcandidates = available_a1_flag + available_b1_flag + available_b0_flag + available_a0_flag;
 
-    if (isAvailableB2 && !(compareMVrefidx(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu], s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu])) &&
-        !(compareMVrefidx(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu], s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu])) && sumcandidates != 4) {
+
+    if (isAvailableB2 && check_MER && check_MER_1 && sumcandidates != 4) {
         available_b2_flag =1;
         spatialCMVS[4] = s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu];
     } else {
@@ -1378,6 +1399,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[4].pred_flag = 0;
         spatialCMVS[4].is_intra = 0;
     }
+   // printf("sumcandidates =%d, isAvailableB2 =%d available_b2_flag =%d \n",sumcandidates,  isAvailableB2, available_b2_flag);
 
     //TODO : temporal motion vector candidate
     if (available_a1_flag) {
@@ -1439,8 +1461,8 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         zeroIdx++;
     }
 #ifdef MV
-//    for (i=0; i < 5; i++)
-//            printf("mvPred[%d]=%d %d\n", i, mergecandlist[i].mv.x, mergecandlist[i].mv.y);
+    /*for (i=0; i < 5; i++)
+            printf("mvPred[%d]=%d %d\n", i, mergecandlist[i].mv.x, mergecandlist[i].mv.y);*/
 #endif
 }
 
@@ -1468,7 +1490,9 @@ static void luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPb
     mv->mv.y = mergecand_list[merge_idx].mv.y;
 
 #ifdef MV
-    printf("mv = %d, %d \n", mergecand_list[merge_idx].mv.x, mergecand_list[merge_idx].mv.y);
+   // printf("mode = %d \n", s->cu.part_mode);
+    printf("mv = %d, %d\n", mergecand_list[merge_idx].mv.x, mergecand_list[merge_idx].mv.y);
+
 #endif
 }
 
@@ -1791,6 +1815,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
             merge_idx = ff_hevc_merge_idx_decode(s);
             av_dlog(s->avctx,
                     "merge_idx: %d\n", merge_idx);
+
             luma_mv_merge_mode(s, x0, y0, 1 << log2_cb_size, 1 << log2_cb_size, log2_cb_size, partIdx, merge_idx, &current_mv);
             x_pu = x0 >> s->sps->log2_min_pu_size;
             y_pu = y0 >> s->sps->log2_min_pu_size;
@@ -2230,6 +2255,9 @@ static int hls_slice_data(HEVCContext *s)
     int pic_size = s->sps->pic_width_in_luma_samples * s->sps->pic_height_in_luma_samples;
     int more_data = 1;
     int x_ctb, y_ctb;
+#ifdef MV
+    int CTU_number =0;
+#endif
 
     memset(s->cu.skip_flag, 0, pic_size);
 
@@ -2244,7 +2272,9 @@ static int hls_slice_data(HEVCContext *s)
         if (s->sh.slice_sample_adaptive_offset_flag[0] ||
             s->sh.slice_sample_adaptive_offset_flag[1])
             hls_sao_param(s, x_ctb >> s->sps->log2_ctb_size, y_ctb >> s->sps->log2_ctb_size);
-
+#ifdef MV
+        //printf("CTU number : %d \n",CTU_number);
+#endif
         more_data = hls_coding_tree(s, x_ctb, y_ctb, s->sps->log2_ctb_size, 0);
         if (!more_data)
             return 0;
@@ -2267,6 +2297,9 @@ static int hls_slice_data(HEVCContext *s)
                 save_states(s);
             }
         }
+#ifdef MV
+        CTU_number++;
+#endif
     }
 
     return 0;
