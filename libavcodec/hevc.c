@@ -1513,7 +1513,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     int xB0, yB0;
     int xB1, yB1;
     int xB2, yB2;
-    struct MvField mvpcand_list[2];
+    struct MvField mvpcand_list[2] = {{{0, 0}}, {{0, 0}}};
     int i;
     int check_A0, check_A1, check_B0, check_B1, check_B2;
     MvField mxA;
@@ -1692,7 +1692,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
 
 #ifdef MV
 //    for (i=0; i < 2; i++)
-//         printf("mvPred[%d]=%d %d\n", i, mvpcand_list[i].mv.x, mvpcand_list[i].mv.y);
+//         printf("mvPred[%d]=%d %d %d %d \n", i, mvpcand_list[i].mv.x, mvpcand_list[i].mv.y, mv->mv.x, mv->mv.y);
 #endif
 }
 
