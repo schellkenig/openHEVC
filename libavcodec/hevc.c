@@ -69,7 +69,8 @@ static int pic_arrays_init(HEVCContext *s)
         s->pu.tab_mvf[i].ref_idx =  -1;
         s->pu.tab_mvf[i].mv.x = 0 ;
         s->pu.tab_mvf[i].mv.y =0;
-        s->pu.tab_mvf[i].pred_flag =0;
+        s->pu.tab_mvf[i].pred_flag_l0 =0;
+        s->pu.tab_mvf[i].pred_flag_l1 =0;
         s->pu.tab_mvf[i].is_intra =0;
     }
 
@@ -1081,7 +1082,7 @@ static void hls_mvd_coding(HEVCContext *s, int x0, int y0, int log2_cb_size)
     s->pu.mvd.x = abs_mvd_greater0_flag[0] * (abs_mvd_minus2[0] + 2) * (1 - (mvd_sign_flag[0] << 1));
     s->pu.mvd.y = abs_mvd_greater0_flag[1] * (abs_mvd_minus2[1] + 2) * (1 - (mvd_sign_flag[1] << 1));
 #ifdef MV
-    //printf("mvd_x %d, %d\n", s->pu.mvd.x, s->pu.mvd.y);
+    printf("mvd_x %d, %d\n", s->pu.mvd.x, s->pu.mvd.y);
 #endif
     return;
 }
@@ -1241,7 +1242,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[0].ref_idx = -1;
         spatialCMVS[0].mv.x = 0;
         spatialCMVS[0].mv.y = 0;
-        spatialCMVS[0].pred_flag = 0;
+        spatialCMVS[0].pred_flag_l0 = 0;
         spatialCMVS[0].is_intra = 0;
     }
 
@@ -1278,7 +1279,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[1].ref_idx = -1;
         spatialCMVS[1].mv.x = 0;
         spatialCMVS[1].mv.y = 0;
-        spatialCMVS[1].pred_flag = 0;
+        spatialCMVS[1].pred_flag_l0 = 0;
         spatialCMVS[1].is_intra = 0;
     }
 
@@ -1321,7 +1322,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[2].ref_idx = -1;
         spatialCMVS[2].mv.x = 0;
         spatialCMVS[2].mv.y = 0;
-        spatialCMVS[2].pred_flag = 0;
+        spatialCMVS[2].pred_flag_l0 = 0;
         spatialCMVS[2].is_intra = 0;
     }
 
@@ -1356,7 +1357,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[3].ref_idx = -1;
         spatialCMVS[3].mv.x = 0;
         spatialCMVS[3].mv.y = 0;
-        spatialCMVS[3].pred_flag = 0;
+        spatialCMVS[3].pred_flag_l0 = 0;
         spatialCMVS[3].is_intra = 0;
     }
 
@@ -1396,7 +1397,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[4].ref_idx = -1;
         spatialCMVS[4].mv.x = 0;
         spatialCMVS[4].mv.y = 0;
-        spatialCMVS[4].pred_flag = 0;
+        spatialCMVS[4].pred_flag_l0 = 0;
         spatialCMVS[4].is_intra = 0;
     }
    // printf("sumcandidates =%d, isAvailableB2 =%d available_b2_flag =%d \n",sumcandidates,  isAvailableB2, available_b2_flag);
@@ -1445,13 +1446,13 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     while(numMergeCand != MRG_MAX_NUM_CANDS) {
         if(s->sh.slice_type == P_SLICE) {
             zerovector.ref_idx = (zeroIdx < numRefIdx) ? zeroIdx : 0;
-            zerovector.pred_flag = 0;
+            zerovector.pred_flag_l0 = 0;
             zerovector.mv.x = 0;
             zerovector.mv.y = 0;
             zerovector.is_intra = 0;
         } else if(s->sh.slice_type == B_SLICE) {
             zerovector.ref_idx = (zeroIdx < numRefIdx) ? zeroIdx : 0;
-            zerovector.pred_flag =1;
+            zerovector.pred_flag_l0 =1;
             zerovector.mv.x = 0;
             zerovector.mv.y = 0;
             zerovector.is_intra = 0;
@@ -1496,6 +1497,11 @@ static void luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPb
 #endif
 }
 
+static int DiffPicOrderCnt(int A, int B)
+{
+    return A-B;
+}
+
 static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag)
 {
     int isScaledFlag_L0 =0;
@@ -1518,6 +1524,8 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     int check_A0, check_A1, check_B0, check_B1, check_B2;
     MvField mxA;
     MvField mxB;
+    int PicA;
+    int PicB;
 
 #ifdef MV
 //    printf("nPbW %d nPbH %d\n", nPbW, nPbH);
@@ -1553,26 +1561,45 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     if((isAvailableA0) || (isAvailableA1)) {
         isScaledFlag_L0 =1;
     }
-    // XA0
+    // XA0 and L0
     if((isAvailableA0) && !(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].is_intra) && (availableFlagLXA0 == 0)) {
-        if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag == 1) && 1 ) { // 1 is used in the if because For first P frame
-                // DiffPicOrderCnt( RefPicListX[ RefIdxLX[ xAk ][ yAk ] ], RefPicListX[ refIdxLX ]// iS considered to be equal to 0)
+        if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l0 == 1) &&
+                (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[0].list[mv->ref_idx]))==0) {
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
-           // mvpcand_list[numMVPCandLX] = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
         }
     }
-    //XA1
-    if((isAvailableA1) && !(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].is_intra) && (availableFlagLXA0==0)) {
-            if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag == 1) && 1 ) { // 1 is used in the if because For first P frame
-                    // DiffPicOrderCnt( RefPicListX[ RefIdxLX[ xAk ][ yAk ] ], RefPicListX[ refIdxLX ]// iS considered to be equal to 0)
-                availableFlagLXA0 =1;
-                mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
-               // mvpcand_list[numMVPCandLX] = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
 
-            }
-     }
+    // XA0 and L1
+    if((isAvailableA0) && !(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].is_intra) && (availableFlagLXA0 == 0)) {
+        if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l1 == 1) &&
+                (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[1].list[mv->ref_idx]))==0) {
+            availableFlagLXA0 =1;
+            mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
+        }
+    }
+
+    //XA1 and L0
+    if((isAvailableA1) && !(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].is_intra) && (availableFlagLXA0==0)) {
+        if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l0 == 1) &&
+                (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[0].list[mv->ref_idx]))==0) {
+            availableFlagLXA0 =1;
+            mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
+        }
+    }
+
+    //XA1 and L1
+    if((isAvailableA1) && !(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].is_intra) && (availableFlagLXA0==0)) {
+        if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l1 == 1) &&
+                (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[1].list[mv->ref_idx]))==0) {
+            availableFlagLXA0 =1;
+            mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
+        }
+    }
      // TODO Step 7 in 8.5.3.1.6.
+  /*  if(availableFlagLXA0 ==1 && ) {
+
+    }*/
 
     // B candidates
     // above right spatial merge candidate
@@ -1590,7 +1617,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         }
 
      if((isAvailableB0 == 1) && (availableFlagLXB0 == 0)) {
-         if((s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].pred_flag == 1) && 1 ) { // 1 is used in the if because For first P frame
+         if((s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].pred_flag_l0 == 1) && 1 ) { // 1 is used in the if because For first P frame
              // DiffPicOrderCnt( RefPicListX[ RefIdxLX[ xAk ][ yAk ] ], RefPicListX[ refIdxLX ]// iS considered to be equal to 0)
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu];
@@ -1616,7 +1643,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         // printf("is_available_b1=%d availableFlagLXB0=%d pred_flag=%d \n", is_available_b1, availableFlagLXB0, s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].pred_flag);
 
          if((is_available_b1 == 1) && (availableFlagLXB0 == 0)) {
-             if((s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].pred_flag == 1) && 1 ) { // 1 is used in the if because For first P frame
+             if((s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].pred_flag_l0 == 1) && 1 ) { // 1 is used in the if because For first P frame
                  // DiffPicOrderCnt( RefPicListX[ RefIdxLX[ xAk ][ yAk ] ], RefPicListX[ refIdxLX ]// iS considered to be equal to 0)
                  availableFlagLXB0 =1;
                 // mvpcand_list[numMVPCandLX] = s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu];
@@ -1643,7 +1670,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          }
 
          if((isAvailableB2 == 1) && (availableFlagLXB0 == 0)) {
-             if((s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].pred_flag == 1) && 1 ) { // 1 is used in the if because For first P frame
+             if((s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].pred_flag_l0 == 1) && 1 ) { // 1 is used in the if because For first P frame
                  // DiffPicOrderCnt( RefPicListX[ RefIdxLX[ xAk ][ yAk ] ], RefPicListX[ refIdxLX ]// iS considered to be equal to 0)
                  availableFlagLXB0 =1;
                 // mvpcand_list[numMVPCandLX] = s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu];
@@ -1656,7 +1683,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
      if(isScaledFlag_L0 == 0 && availableFlagLXB0) {
          availableFlagLXA0 =1;
          mxA = mxB;
-      }
+     }
      if(isScaledFlag_L0 == 0) {
          availableFlagLXB0 =0;
      }
@@ -1804,7 +1831,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
     int mvp_l0_flag;
     int mvp_l1_flag;
     struct MvField current_mv = {{0, 0}};
-    current_mv.pred_flag=1;
+    current_mv.pred_flag_l0=1;
     int i, j;
     int x_pu, y_pu;
     int pic_width_in_min_pu = s->sps->pic_width_in_min_cbs * 4;
@@ -1855,16 +1882,22 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
             if (inter_pred_idc != PRED_L1) {
                 if (s->sh.num_ref_idx_l0_active > 1) {
                     ref_idx_l0 = ff_hevc_ref_idx_lx_decode(s, s->sh.num_ref_idx_l0_active);
+                    current_mv.pred_flag_l0 = 1;
+                    current_mv.ref_idx = ref_idx_l0;
                     av_dlog(s->avctx, "ref_idx_l0: %d\n",
                             ref_idx_l0);
                 }
                 hls_mvd_coding(s, x0, y0, 0 );
                 mvp_l0_flag = ff_hevc_mvp_lx_flag_decode(s);
+                printf("coming here l0 mvp mode \n");
                 luma_mv_mvp_mode(s, x0, y0, nPbW, nPbH, log2_cb_size, partIdx, merge_idx, &current_mv, mvp_l0_flag);
             }
             if (inter_pred_idc != PRED_L0) {
                 if (s->sh.num_ref_idx_l1_active > 1) {
                     ref_idx_l1 = ff_hevc_ref_idx_lx_decode(s, s->sh.num_ref_idx_l1_active);
+                    current_mv.pred_flag_l1 =1;
+                    current_mv.pred_flag_l0 =0;
+                    current_mv.ref_idx = ref_idx_l1;
                     av_dlog(s->avctx, "ref_idx_l0: %d\n",
                             ref_idx_l0);
                 }
@@ -1875,6 +1908,7 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
                     hls_mvd_coding(s, x0, y0, 1 );
                 }
                 mvp_l1_flag = ff_hevc_mvp_lx_flag_decode(s);
+                printf("coming here l1 mvp mode \n");
                 luma_mv_mvp_mode(s, x0, y0, nPbW, nPbH, log2_cb_size, partIdx, merge_idx, &current_mv, mvp_l1_flag);
             }
             current_mv.mv.x += s->pu.mvd.x;
