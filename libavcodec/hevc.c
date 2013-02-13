@@ -1082,7 +1082,7 @@ static void hls_mvd_coding(HEVCContext *s, int x0, int y0, int log2_cb_size)
     s->pu.mvd.x = abs_mvd_greater0_flag[0] * (abs_mvd_minus2[0] + 2) * (1 - (mvd_sign_flag[0] << 1));
     s->pu.mvd.y = abs_mvd_greater0_flag[1] * (abs_mvd_minus2[1] + 2) * (1 - (mvd_sign_flag[1] << 1));
 #ifdef MV
-    printf("mvd_x %d, %d\n", s->pu.mvd.x, s->pu.mvd.y);
+   // printf("mvd_x %d, %d\n", s->pu.mvd.x, s->pu.mvd.y);
 #endif
     return;
 }
@@ -1524,8 +1524,7 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     int check_A0, check_A1, check_B0, check_B1, check_B2;
     MvField mxA;
     MvField mxB;
-    int PicA;
-    int PicB;
+
 
 #ifdef MV
 //    printf("nPbW %d nPbH %d\n", nPbW, nPbH);
@@ -1889,7 +1888,6 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
                 }
                 hls_mvd_coding(s, x0, y0, 0 );
                 mvp_l0_flag = ff_hevc_mvp_lx_flag_decode(s);
-                printf("coming here l0 mvp mode \n");
                 luma_mv_mvp_mode(s, x0, y0, nPbW, nPbH, log2_cb_size, partIdx, merge_idx, &current_mv, mvp_l0_flag);
             }
             if (inter_pred_idc != PRED_L0) {
@@ -1908,7 +1906,6 @@ static void hls_prediction_unit(HEVCContext *s, int x0, int y0, int nPbW, int nP
                     hls_mvd_coding(s, x0, y0, 1 );
                 }
                 mvp_l1_flag = ff_hevc_mvp_lx_flag_decode(s);
-                printf("coming here l1 mvp mode \n");
                 luma_mv_mvp_mode(s, x0, y0, nPbW, nPbH, log2_cb_size, partIdx, merge_idx, &current_mv, mvp_l1_flag);
             }
             current_mv.mv.x += s->pu.mvd.x;
