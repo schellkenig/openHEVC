@@ -1241,7 +1241,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[0].mv.x = 0;
         spatialCMVS[0].mv.y = 0;
         spatialCMVS[0].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[0].pred_flag_l1 =0;
         spatialCMVS[0].is_intra = 0;
     }
 
@@ -1279,7 +1279,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[1].mv.x = 0;
         spatialCMVS[1].mv.y = 0;
         spatialCMVS[1].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[1].pred_flag_l1 =0;
         spatialCMVS[1].is_intra = 0;
     }
 
@@ -1313,7 +1313,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[2].mv.x = 0;
         spatialCMVS[2].mv.y = 0;
         spatialCMVS[2].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[2].pred_flag_l1 =0;
         spatialCMVS[2].is_intra = 0;
     }
 
@@ -1349,7 +1349,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[3].mv.x = 0;
         spatialCMVS[3].mv.y = 0;
         spatialCMVS[3].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[3].pred_flag_l1 =0;
         spatialCMVS[3].is_intra = 0;
     }
 
