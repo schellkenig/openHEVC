@@ -296,7 +296,7 @@ void ff_hevc_cabac_reinit(HEVCContext *s)
      GetBitContext *gb = &s->gb;
      
      n = -get_bits_count(gb) & 7;
-     if (n) skip_bits(gb, n);
+     if (n) skip_bytes(&s->cc, n);
      ff_init_cabac_decoder(&s->cc,
                           gb->buffer + get_bits_count(gb) / 8,
                           (get_bits_left(&s->gb) + 7) / 8);

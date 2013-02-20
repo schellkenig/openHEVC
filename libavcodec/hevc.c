@@ -1109,7 +1109,6 @@ static int z_scan_block_avail(HEVCContext *s, int xCurr, int yCurr, int xN, int 
         av_log(s->avctx, AV_LOG_ERROR, "TODO : check for different slices and tiles \n");
 
     //TODO : check for different slices and tiles
-    // printf("minBlockAddrN =%d and minBlockAddrCurr=%d \n", minBlockAddrN, minBlockAddrCurr);
     if ((minBlockAddrN < 0) || (minBlockAddrN > minBlockAddrCurr)) {
         availableN = 0;
     } else {
@@ -1241,7 +1240,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[0].mv.x = 0;
         spatialCMVS[0].mv.y = 0;
         spatialCMVS[0].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[0].pred_flag_l1 =0;
         spatialCMVS[0].is_intra = 0;
     }
 
@@ -1279,7 +1278,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[1].mv.x = 0;
         spatialCMVS[1].mv.y = 0;
         spatialCMVS[1].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[1].pred_flag_l1 =0;
         spatialCMVS[1].is_intra = 0;
     }
 
@@ -1313,7 +1312,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[2].mv.x = 0;
         spatialCMVS[2].mv.y = 0;
         spatialCMVS[2].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[2].pred_flag_l1 =0;
         spatialCMVS[2].is_intra = 0;
     }
 
@@ -1349,7 +1348,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         spatialCMVS[3].mv.x = 0;
         spatialCMVS[3].mv.y = 0;
         spatialCMVS[3].pred_flag_l0 = 0;
-        spatialCMVS[4].pred_flag_l1 =0;
+        spatialCMVS[3].pred_flag_l1 =0;
         spatialCMVS[3].is_intra = 0;
     }
 
@@ -1540,9 +1539,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     }
 
 
-#ifdef MV
-//    printf ("ref_idx cureent_mv.=%d \n",mv->ref_idx);
-#endif
     // left bottom spatial candidate
     xA0 = x0 - 1;
     yA0 = y0 + nPbH;
@@ -1578,7 +1574,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     if((isAvailableA0) && !(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].is_intra) && (availableFlagLXA0 == 0)) {
         if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l0 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))==0) {
-            // printf("coming XA0, LO mv scaling nb= %d ac=%d \n",s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]);
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
         }
@@ -1587,7 +1582,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     if((isAvailableA0) && !(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].is_intra) && (availableFlagLXA0 == 0)) {
         if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l1 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))==0) {
-            // printf("coming XA0, L1 mv scaling nb= %d ac=%d \n",s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]);
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
         }
@@ -1596,7 +1590,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     if((isAvailableA1) && !(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].is_intra) && (availableFlagLXA0==0)) {
         if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l0 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))==0) {
-          //  printf("coming XA1, LO mv scaling nb= %d ac=%d \n",s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]);
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
         }
@@ -1605,7 +1598,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
     if((isAvailableA1) && !(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].is_intra) && (availableFlagLXA0==0)) {
         if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l1 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))==0) {
-        //  printf("coming XA1, L1 mv scaling nb= %d ac=%d \n",s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]);
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
         }
@@ -1616,7 +1608,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
         if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l0 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
-          //  printf("coming XA0, LO mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
             td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)])));
@@ -1633,7 +1624,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         if((s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].pred_flag_l1 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
             // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-          //  printf("coming XA0, L1 mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu];
             td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA0_pu) * pic_width_in_min_pu + yA0_pu].ref_idx)])));
@@ -1650,7 +1640,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l0 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
             // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-           // printf("coming XA1, LO mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
             td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[0].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)])));
@@ -1668,7 +1657,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
         if((s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].pred_flag_l1 == 1) &&
                 (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
             // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-           // printf("coming XA1, L1 mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
             availableFlagLXA0 =1;
             mxA = s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu];
             td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[1].list[(s->pu.tab_mvf[(xA1_pu) * pic_width_in_min_pu + yA1_pu].ref_idx)])));
@@ -1788,7 +1776,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          if((s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].pred_flag_l0 == 1) && (isScaledFlag_L0 == 0) &&
                  (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB0, LO mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)])));
@@ -1805,7 +1792,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          if((s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].pred_flag_l1 == 1) && (isScaledFlag_L0 == 0) &&
                  (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB0, L1 mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB0_pu) * pic_width_in_min_pu + yB0_pu].ref_idx)])));
@@ -1823,7 +1809,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          if((s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].pred_flag_l0 == 1) && (isScaledFlag_L0 == 0) &&
                  (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB1, LO mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)])));
@@ -1840,7 +1825,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          if((s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].pred_flag_l1 == 1) && (isScaledFlag_L0 == 0) &&
                  (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB1, L1 mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB1_pu) * pic_width_in_min_pu + yB1_pu].ref_idx)])));
@@ -1858,7 +1842,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
          if((s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].pred_flag_l0 == 1) && (isScaledFlag_L0 == 0) &&
                  (DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB2, LO mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[0].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)])));
@@ -1876,7 +1859,6 @@ static void luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH,
                  (DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]))!=0) {
 
              // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-            // printf("coming XB2, L1 mv scaling val= %d \n",DiffPicOrderCnt(s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)], s->sh.refPicList[ref_idx_curr].list[mv->ref_idx]));
              availableFlagLXB0 =1;
              mxB = s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu];
              td = Clip3(-128, 127, (DiffPicOrderCnt(s->poc,s->sh.refPicList[1].list[(s->pu.tab_mvf[(xB2_pu) * pic_width_in_min_pu + yB2_pu].ref_idx)])));
