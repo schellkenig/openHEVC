@@ -100,7 +100,7 @@ const uint8_t init_values[3][HEVC_CONTEXTS] = {
         // pred_mode
         CNU,
         // part_mode
-        184, CNU, CNU,
+        184, 134, 149,
         // prev_intra_luma_pred_mode
         184,
         // intra_chroma_pred_mode
@@ -292,14 +292,7 @@ void load_states(HEVCContext *s)
 
 void ff_hevc_cabac_reinit(HEVCContext *s)
 {
-     int n;
-     GetBitContext *gb = &s->gb;
-     
-     n = -get_bits_count(gb) & 7;
-     if (n) skip_bytes(&s->cc, n);
-     ff_init_cabac_decoder(&s->cc,
-                          gb->buffer + get_bits_count(gb) / 8,
-                          (get_bits_left(&s->gb) + 7) / 8);
+     skip_bytes(&s->cc,0);
 }
 
 void ff_hevc_cabac_init(HEVCContext *s)
@@ -308,6 +301,7 @@ void ff_hevc_cabac_init(HEVCContext *s)
     int init_type;
     GetBitContext *gb = &s->gb;
 
+    skip_bits(gb, 1);
     align_get_bits(gb);
     ff_init_cabac_states(&s->cc);
     ff_init_cabac_decoder(&s->cc,
