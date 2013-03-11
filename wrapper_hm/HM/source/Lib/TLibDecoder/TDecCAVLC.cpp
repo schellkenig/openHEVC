@@ -42,7 +42,12 @@
 //! \ingroup TLibDecoder
 //! \{
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
+
+Void  xTraceVPSHeader (TComVPS *pVPS)
+{
+  fprintf( g_hTrace, "=========== Video Parameter Set ID:   ===========\n");
+}
 
 Void  xTraceSPSHeader (TComSPS *pSPS)
 {
@@ -204,7 +209,7 @@ inline Void copySaoOneLcuParam(SaoLcuParam* dst,  SaoLcuParam* src)
 
 Void TDecCavlc::parsePPS(TComPPS* pcPPS)
 {
-#if ENC_DEC_TRACE  
+#if DEBUG_HEADER
   xTracePPSHeader (pcPPS);
 #endif
   UInt  uiCode;
@@ -353,7 +358,7 @@ Void TDecCavlc::parsePPS(TComPPS* pcPPS)
 
 Void  TDecCavlc::parseVUI(TComVUI* pcVUI, TComSPS *pcSPS)
 {
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   fprintf( g_hTrace, "----------- vui_parameters -----------\n");
 #endif
   UInt  uiCode;
@@ -555,7 +560,7 @@ Void TDecCavlc::parseHrdParameters(TComHRD *hrd, Bool commonInfPresentFlag, UInt
 
 Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 {
-#if ENC_DEC_TRACE  
+#if DEBUG_HEADER
   xTraceSPSHeader (pcSPS);
 #endif
 
@@ -719,7 +724,9 @@ Void TDecCavlc::parseSPS(TComSPS* pcSPS)
 Void TDecCavlc::parseVPS(TComVPS* pcVPS)
 {
   UInt  uiCode;
-  
+#if DEBUG_HEADER
+  xTraceVPSHeader(pcVPS);
+#endif
   READ_CODE( 4,  uiCode,  "vps_video_parameter_set_id" );         pcVPS->setVPSId( uiCode );
   READ_CODE( 2,  uiCode,  "vps_reserved_three_2bits" );           assert(uiCode == 3);
   READ_CODE( 6,  uiCode,  "vps_reserved_zero_6bits" );            assert(uiCode == 0);
@@ -811,7 +818,7 @@ Void TDecCavlc::parseSliceHeader (TComSlice*& rpcSlice, ParameterSetManagerDecod
   UInt  uiCode;
   Int   iCode;
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   xTraceSliceHeader(rpcSlice);
 #endif
   TComPPS* pps = NULL;

@@ -63,7 +63,19 @@ Void ContextModel::init( Int qp, Int initValue )
   UInt mpState    = (initState >= 64 );
   m_ucState       = ( (mpState? (initState - 64):(63 - initState)) <<1) + mpState;
 }
-
+Void ContextModel::init2( Int qp, Int initValue )
+{
+  qp = Clip3(0, 51, qp);
+  Int  slope      = (initValue>>4)*5 - 45;
+  Int  offset     = ((initValue&15)<<3)-16;
+  Int  initState  =  min( max( 1, ( ( ( slope * qp ) >> 4 ) + offset ) ), 126 );
+  UInt mpState    = (initState >= 64 );
+  m_ucState       = ( (mpState? (initState - 64):(63 - initState)) <<1) + mpState;
+#if DEBUG_TRACE
+  fprintf( g_hTrace," initValue = %d slope = %d offset = %d state = %d mps = %d ucState = %d\n",
+      initValue, slope, offset, initState, mpState, m_ucState);
+#endif
+}
 const UChar ContextModel::m_aucNextStateMPS[ 128 ] =
 {
   2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,

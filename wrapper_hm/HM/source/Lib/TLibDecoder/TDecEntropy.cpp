@@ -320,6 +320,9 @@ Void TDecEntropy::decodeMVPIdxPU( TComDataCU* pcSubCU, UInt uiPartAddr, UInt uiD
 
 Void TDecEntropy::xDecodeTransform( TComDataCU* pcCU, UInt offsetLuma, UInt offsetChroma, UInt uiAbsPartIdx, UInt uiDepth, UInt width, UInt height, UInt uiTrIdx, Bool& bCodeDQP)
 {
+#if DEBUG_CABAC
+  fprintf(g_hTrace,"read_TransformTree.start\n");
+#endif
   UInt uiSubdiv;
   const UInt uiLog2TrafoSize = g_aucConvertToBit[pcCU->getSlice()->getSPS()->getMaxCUWidth()]+2 - uiDepth;
 
@@ -423,7 +426,7 @@ Void TDecEntropy::xDecodeTransform( TComDataCU* pcCU, UInt offsetLuma, UInt offs
   {
     assert( uiDepth >= pcCU->getDepth( uiAbsPartIdx ) );
     pcCU->setTrIdxSubParts( uiTrDepth, uiAbsPartIdx, uiDepth );
-    
+ /*
     {
       DTRACE_CABAC_VL( g_nSymbolCounter++ );
       DTRACE_CABAC_T( "\tTrIdx: abspart=" );
@@ -434,7 +437,7 @@ Void TDecEntropy::xDecodeTransform( TComDataCU* pcCU, UInt offsetLuma, UInt offs
       DTRACE_CABAC_V( uiTrDepth );
       DTRACE_CABAC_T( "\n" );
     }
-    
+*/
     pcCU->setCbfSubParts ( 0, TEXT_LUMA, uiAbsPartIdx, uiDepth );
     if( pcCU->getPredictionMode(uiAbsPartIdx) != MODE_INTRA && uiDepth == pcCU->getDepth( uiAbsPartIdx ) && !pcCU->getCbf( uiAbsPartIdx, TEXT_CHROMA_U, 0 ) && !pcCU->getCbf( uiAbsPartIdx, TEXT_CHROMA_V, 0 ) )
     {
@@ -446,6 +449,10 @@ Void TDecEntropy::xDecodeTransform( TComDataCU* pcCU, UInt offsetLuma, UInt offs
     }
 
 
+#if DEBUG_CABAC
+    fprintf(g_hTrace,"read_TransformUnit.start\n");// %d, %d, %d, %d, %d, %d, %d)\n",
+    //    pcCU->getCUPelX()+offsetLuma, pcCU->getCUPelY()+offsetLuma, pcCU->getCUPelX()+offsetChroma, pcCU->getCUPelY()+offsetChroma, height, uiTrIdx, uiInnerQuadIdx);
+#endif
     // transform_unit begin
     UInt cbfY = pcCU->getCbf( uiAbsPartIdx, TEXT_LUMA    , uiTrIdx );
     UInt cbfU = pcCU->getCbf( uiAbsPartIdx, TEXT_CHROMA_U, uiTrIdx );
@@ -508,6 +515,9 @@ Void TDecEntropy::xDecodeTransform( TComDataCU* pcCU, UInt offsetLuma, UInt offs
       }
     }
     // transform_unit end
+#if DEBUG_CABAC
+    fprintf(g_hTrace,"read_TransformUnit_end\n");
+#endif
   }
 }
 

@@ -68,7 +68,7 @@ public:
   
   Void  copyState         ( TDecBinIf* pcTDecBinIf );
   TDecBinCABAC* getTDecBinCABAC()  { return this; }
-
+  void printStatus();
 private:
   TComInputBitstream* m_pcTComBitstream;
   UInt                m_uiRange;

@@ -46,7 +46,8 @@
 //! \ingroup TLibDecoder
 //! \{
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
+
 Void  xTraceSEIHeader()
 {
   fprintf( g_hTrace, "=========== SEI message ===========\n");
@@ -119,7 +120,7 @@ void SEIReader::parseSEImessage(TComInputBitstream* bs, SEIMessages& seis, const
 
 Void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType, TComSPS *sps)
 {
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   xTraceSEIHeader();
 #endif
   Int payloadType = 0;
@@ -138,7 +139,7 @@ Void SEIReader::xReadSEImessage(SEIMessages& seis, const NalUnitType nalUnitType
     payloadSize += val;
   } while (val==0xFF);
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
   xTraceSEIMessageType((SEI::PayloadType)payloadType);
 #endif
 

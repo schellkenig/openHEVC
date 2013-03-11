@@ -44,7 +44,7 @@
 
 #include "TLibCommon/TComRom.h"
 
-#if ENC_DEC_TRACE
+#if DEBUG_HEADER
 
 #define READ_CODE(length, code, name)     xReadCodeTr ( length, code, name )
 #define READ_UVLC(        code, name)     xReadUvlcTr (         code, name )

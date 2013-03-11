@@ -160,9 +160,13 @@ extern const UChar g_aucDCTDSTMode_Hor[NUM_INTRA_MODE];
 
 extern       Char   g_aucConvertToBit  [ MAX_CU_SIZE+1 ];   // from width to log2(width)-2
 
-#ifndef ENC_DEC_TRACE
-# define ENC_DEC_TRACE 1
-#endif
+#define ENC_DEC_TRACE  1
+#define DEBUG_HEADER 1
+#define DEBUG_CABAC 1
+#define CHECK_CABAC_PRINTF 1
+#define DEBUG_TRACE_xIT_SPLITTER 0
+#define DEBUG_TRACE_xIT_MERGER 0
+
 
 #if ENC_DEC_TRACE
 extern FILE*  g_hTrace;
@@ -174,7 +178,8 @@ extern UInt64 g_nSymbolCounter;
 
 #define COUNTER_START    1
 #define COUNTER_END      0 //( UInt64(1) << 63 )
-
+#endif
+#if DEBUG_CABAC
 #define DTRACE_CABAC_F(x)     if ( ( g_nSymbolCounter >= COUNTER_START && g_nSymbolCounter <= COUNTER_END )|| g_bJustDoIt ) fprintf( g_hTrace, "%f", x );
 #define DTRACE_CABAC_V(x)     if ( ( g_nSymbolCounter >= COUNTER_START && g_nSymbolCounter <= COUNTER_END )|| g_bJustDoIt ) fprintf( g_hTrace, "%d", x );
 #define DTRACE_CABAC_VL(x)    if ( ( g_nSymbolCounter >= COUNTER_START && g_nSymbolCounter <= COUNTER_END )|| g_bJustDoIt ) fprintf( g_hTrace, "%lld", x );

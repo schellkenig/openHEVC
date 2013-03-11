@@ -49,6 +49,12 @@ TDecBinCABAC::~TDecBinCABAC()
 {
 }
 
+void TDecBinCABAC::printStatus() {
+#if DEBUG_CABAC or CHECK_CABAC_PRINTF
+  fprintf( g_hTrace,"codIRange := %d codIOffset := %d\n", m_uiRange, m_uiValue>>7);
+#endif
+}
+
 Void
 TDecBinCABAC::init( TComInputBitstream* pcTComBitstream )
 {
@@ -105,6 +111,10 @@ TDecBinCABAC::copyState( TDecBinIf* pcTDecBinIf )
 Void
 TDecBinCABAC::decodeBin( UInt& ruiBin, ContextModel &rcCtxModel )
 {
+#if DEBUG_CABAC
+  fprintf( g_hTrace,"codIRange := %d codIOffset := %d state := %d mps := %d\n",
+          m_uiRange, m_uiValue>>7, rcCtxModel.getState(), rcCtxModel.getMps());
+#endif
   UInt uiLPS = TComCABACTables::sm_aucLPSTable[ rcCtxModel.getState() ][ ( m_uiRange >> 6 ) - 4 ];
   m_uiRange -= uiLPS;
   UInt scaledRange = m_uiRange << 7;
@@ -117,6 +127,10 @@ TDecBinCABAC::decodeBin( UInt& ruiBin, ContextModel &rcCtxModel )
     
     if ( scaledRange >= ( 256 << 7 ) )
     {
+#if DEBUG_CABAC
+      fprintf( g_hTrace,"codIRange := %d codIOffset := %d state := %d mps := %d binVal := %d\n",
+              m_uiRange, m_uiValue>>7, rcCtxModel.getState(), rcCtxModel.getMps(), ruiBin  );
+#endif
       return;
     }
     
@@ -146,6 +160,10 @@ TDecBinCABAC::decodeBin( UInt& ruiBin, ContextModel &rcCtxModel )
       m_bitsNeeded -= 8;
     }
   }
+#if DEBUG_CABAC
+  fprintf( g_hTrace,"codIRange := %d codIOffset := %d state := %d mps := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>7, rcCtxModel.getState(), rcCtxModel.getMps(), ruiBin  );
+#endif
 }
 
 Void
@@ -166,6 +184,10 @@ TDecBinCABAC::decodeBinEP( UInt& ruiBin )
     ruiBin = 1;
     m_uiValue -= scaledRange;
   }
+#if DEBUG_CABAC
+  fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>7, ruiBin  );
+#endif
 }
 
 Void TDecBinCABAC::decodeBinsEP( UInt& ruiBin, Int numBins )
@@ -185,6 +207,13 @@ Void TDecBinCABAC::decodeBinsEP( UInt& ruiBin, Int numBins )
       {
         bins++;
         m_uiValue -= scaledRange;
+#if DEBUG_CABAC
+      fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>(14-i), 1  );
+    } else {
+      fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>(14-i), 0  );
+#endif
       }
     }
     numBins -= 8;
@@ -208,6 +237,13 @@ Void TDecBinCABAC::decodeBinsEP( UInt& ruiBin, Int numBins )
     {
       bins++;
       m_uiValue -= scaledRange;
+#if DEBUG_CABAC
+      fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>(7+numBins-1-i), 1  );
+    } else {
+      fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+          m_uiRange, m_uiValue>>(7+numBins-1-i), 0  );
+#endif
     }
   }
   
@@ -238,6 +274,10 @@ TDecBinCABAC::decodeBinTrm( UInt& ruiBin )
       }
     }
   }
+#if DEBUG_CABAC
+  fprintf( g_hTrace,"codIRange := %d codIOffset := %d binVal := %d\n",
+            m_uiRange, m_uiValue>>7, ruiBin  );
+#endif
 }
 
 /** Reset BAC register values.
