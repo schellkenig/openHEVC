@@ -117,13 +117,15 @@ static int derive_temporal_colocated_mvs(HEVCContext *s, MvField temp_col, int r
     int listCol;
     int refidxCol;
     int check_mvset =0;
+    RefPicList  *refPicList =  s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].refPicList;
+
 
     if(temp_col.is_intra) {
         mvLXCol->x = 0;
         mvLXCol->y = 0;
         availableFlagLXCol = 0;
     } else {
-        if((temp_col.pred_flag[0] == 0)) {
+        if(temp_col.pred_flag[0] == 0) {
             mvCol = temp_col.mv[1];
             refidxCol = temp_col.ref_idx[1];
             listCol = L1;
@@ -136,12 +138,12 @@ static int derive_temporal_colocated_mvs(HEVCContext *s, MvField temp_col, int r
         } else if((temp_col.pred_flag[0] == 1) && (temp_col.pred_flag[1] == 1)) {
             int check_diffpicount = 0;
             int i = 0;
-            for (i = 0; i < s->sh.refPicList[0].numPic; i++) {
-                if(DiffPicOrderCnt(s->sh.refPicList[0].list[i], s->poc) > 0)
+            for (i = 0; i < refPicList[0].numPic; i++) {
+                if(DiffPicOrderCnt(refPicList[0].list[i], s->poc) > 0)
                     check_diffpicount++;
             }
-            for (i = 0; i < s->sh.refPicList[1].numPic; i++) {
-                if(DiffPicOrderCnt(s->sh.refPicList[1].list[i], s->poc) > 0)
+            for (i = 0; i < refPicList[1].numPic; i++) {
+                if(DiffPicOrderCnt(refPicList[1].list[i], s->poc) > 0)
                     check_diffpicount++;
             }
             if ((check_diffpicount == 0) && (X == 0)) {
@@ -153,7 +155,7 @@ static int derive_temporal_colocated_mvs(HEVCContext *s, MvField temp_col, int r
                 refidxCol = temp_col.ref_idx[1];
                 listCol = L1;
             } else {
-                if(s->sh.collocated_from_l0_flag == 1) {
+                if(s->sh.collocated_from_l0_flag == 0) {
                     mvCol = temp_col.mv[0];
                     refidxCol = temp_col.ref_idx[0];
                     listCol = L0;
@@ -169,16 +171,14 @@ static int derive_temporal_colocated_mvs(HEVCContext *s, MvField temp_col, int r
         if(check_mvset == 1) {
             availableFlagLXCol = 1;
             int colPocDiff = DiffPicOrderCnt(colPic, refPicList_col[listCol].list[refidxCol]);
-            int curPocDiff = DiffPicOrderCnt(s->poc, s->sh.refPicList[X].list[refIdxLx]);
+            int curPocDiff = DiffPicOrderCnt(s->poc, refPicList[X].list[refIdxLx]);
             if (colPocDiff == curPocDiff) {
                 mvLXCol->x = mvCol.x;
                 mvLXCol->y = mvCol.y;
             } else {
                 int td = av_clip_c(colPocDiff, -128, 127);
                 int tb = av_clip_c(curPocDiff, -128, 127);
-                int tx = 0;
-                if (td > 0)
-                    tx = (0x4000 + abs(td/2)) / td;
+                int tx = (0x4000 + abs(td/2)) / td;
                 int distScaleFactor = av_clip_c((tb * tx + 32) >> 6,
                                                 -4096, 4095);
                 mvLXCol->x = av_clip_c((distScaleFactor * mvCol.x + 127 + (distScaleFactor * mvCol.x < 0)) >> 8,
@@ -197,6 +197,7 @@ static int temporal_luma_motion_vector(HEVCContext *s, int x0, int y0, int nPbW,
 {
     MvField *coloc_tab_mvf = NULL;
     MvField temp_col;
+    RefPicList  *refPicList =  s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].refPicList;
     int xPRb, yPRb;
     int xPRb_pu;
     int yPRb_pu;
@@ -204,20 +205,18 @@ static int temporal_luma_motion_vector(HEVCContext *s, int x0, int y0, int nPbW,
     int xPCtr_pu;
     int yPCtr_pu;
     int pic_width_in_min_pu  = s->sps->pic_width_in_min_cbs * 4;
-    int pic_height_in_min_pu  = s->sps->pic_height_in_min_cbs * 4;
     int short_ref_idx = 0;
     int availableFlagLXCol = 0;
     int colPic;
-    int i=0;
-    int check;
+
     if((s->sh.slice_type == B_SLICE) && (s->sh.collocated_from_l0_flag == 0)) {
-        short_ref_idx = s->sh.refPicList[1].idx[s->sh.collocated_ref_idx];
+        short_ref_idx = refPicList[1].idx[s->sh.collocated_ref_idx];
         coloc_tab_mvf = s->short_refs[short_ref_idx].tab_mvf;
         colPic = s->short_refs[short_ref_idx].poc;
     }
     else if(((s->sh.slice_type == B_SLICE) && (s->sh.collocated_from_l0_flag == 1))
             || (s->sh.slice_type == P_SLICE)) {
-        short_ref_idx = s->sh.refPicList[0].idx[s->sh.collocated_ref_idx];
+        short_ref_idx = refPicList[0].idx[s->sh.collocated_ref_idx];
         coloc_tab_mvf = s->short_refs[short_ref_idx].tab_mvf;
         colPic = s->short_refs[short_ref_idx].poc;
     }
@@ -257,6 +256,8 @@ static int temporal_luma_motion_vector(HEVCContext *s, int x0, int y0, int nPbW,
 static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int singleMCLFlag, int part_idx,  struct MvField mergecandlist[])
 {
 
+    RefPicList  *refPicList =  s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].refPicList;
+    MvField *tab_mvf = s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].tab_mvf;
     int available_a1_flag=0;
     int available_b1_flag=0;
     int available_b0_flag=0;
@@ -325,7 +326,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     int xA1_pu = xA1 >> s->sps->log2_min_pu_size;
     int yA1_pu = yA1 >> s->sps->log2_min_pu_size;
 
-    if((xA1_pu >= 0) && !(s->pu.tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu].is_intra) && check_A1) {
+    if((xA1_pu >= 0) && !(tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu].is_intra) && check_A1) {
         isAvailableA1 = 1;
     } else {
         isAvailableA1 = 0;
@@ -339,7 +340,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
 
     if (isAvailableA1) {
         available_a1_flag = 1;
-        spatialCMVS[0] = s->pu.tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu];
+        spatialCMVS[0] = tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu];
     } else {
         available_a1_flag = 0;
         spatialCMVS[0].ref_idx[0] = -1;
@@ -363,7 +364,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     is_available_b1 = 0;
     check_B1 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB1, yB1, part_idx);
 
-    if((yB1_pu >= 0) && !(s->pu.tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu].is_intra) && check_B1) {
+    if((yB1_pu >= 0) && !(tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu].is_intra) && check_B1) {
         is_available_b1 = 1;
     } else {
         is_available_b1 = 0;
@@ -375,12 +376,12 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         is_available_b1 = 0;
     }
     if (isAvailableA1 && is_available_b1) {
-        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu], s->pu.tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
+        check_MER = !(compareMVrefidx(tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu], tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
     }
 
     if (is_available_b1 && check_MER) {
         available_b1_flag = 1;
-        spatialCMVS[1] = s->pu.tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu];
+        spatialCMVS[1] = tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu];
     } else {
         available_b1_flag = 0;
         spatialCMVS[1].ref_idx[0] = -1;
@@ -402,7 +403,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     yB0_pu = yB0 >> s->sps->log2_min_pu_size;
     isAvailableB0 = 0;
     check_B0 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB0, yB0, part_idx);
-    if((yB0_pu >= 0) && !(s->pu.tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu].is_intra) && check_B0) {
+    if((yB0_pu >= 0) && !(tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu].is_intra) && check_B0) {
         isAvailableB0 = 1;
     } else {
         isAvailableB0 = 0;
@@ -413,12 +414,12 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     }
 
     if (is_available_b1 && isAvailableB0) {
-        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu], s->pu.tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu]));
+        check_MER = !(compareMVrefidx(tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu], tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu]));
     }
 
     if (isAvailableB0 && check_MER) {
         available_b0_flag = 1;
-        spatialCMVS[2] = s->pu.tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu];
+        spatialCMVS[2] = tab_mvf[(yB0_pu) * pic_width_in_min_pu + xB0_pu];
     } else {
         available_b0_flag = 0;
         spatialCMVS[2].ref_idx[0] = -1;
@@ -441,7 +442,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     isAvailableA0 = 0;
     check_A0 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xA0, yA0, part_idx);
 
-    if((xA0_pu >= 0) && !(s->pu.tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu].is_intra) && check_A0) {
+    if((xA0_pu >= 0) && !(tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu].is_intra) && check_A0) {
         isAvailableA0 = 1;
     } else {
         isAvailableA0 = 0;
@@ -451,13 +452,13 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         isAvailableA0 = 0;
     }
     if (isAvailableA1 && isAvailableA0) {
-        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu], s->pu.tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
+        check_MER = !(compareMVrefidx(tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu], tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
     }
 
 
     if (isAvailableA0 && check_MER) {
         available_a0_flag = 1;
-        spatialCMVS[3] = s->pu.tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu];
+        spatialCMVS[3] = tab_mvf[(yA0_pu) * pic_width_in_min_pu + xA0_pu];
     } else {
         available_a0_flag = 0;
         spatialCMVS[3].ref_idx[0] = -1;
@@ -480,7 +481,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
     isAvailableB2 = 0;
     check_B2 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB2, yB2, part_idx);
 
-    if((xB2_pu >= 0) && (yB2_pu >= 0) && !(s->pu.tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu].is_intra) && check_B2) {
+    if((xB2_pu >= 0) && (yB2_pu >= 0) && !(tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu].is_intra) && check_B2) {
         isAvailableB2 = 1;
     } else {
         isAvailableB2 = 0;
@@ -490,10 +491,10 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
         isAvailableB2 = 0;
     }
     if (isAvailableA1 && isAvailableB2) {
-        check_MER = !(compareMVrefidx(s->pu.tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu], s->pu.tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
+        check_MER = !(compareMVrefidx(tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu], tab_mvf[(yA1_pu) * pic_width_in_min_pu + xA1_pu]));
     }
     if (is_available_b1 && isAvailableB2) {
-        check_MER_1 = !(compareMVrefidx(s->pu.tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu], s->pu.tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu]));
+        check_MER_1 = !(compareMVrefidx(tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu], tab_mvf[(yB1_pu) * pic_width_in_min_pu + xB1_pu]));
     }
 
     sumcandidates = available_a1_flag + available_b1_flag + available_b0_flag + available_a0_flag;
@@ -501,7 +502,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
 
     if (isAvailableB2 && check_MER && check_MER_1 && sumcandidates != 4) {
         available_b2_flag =1;
-        spatialCMVS[4] = s->pu.tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu];
+        spatialCMVS[4] = tab_mvf[(yB2_pu) * pic_width_in_min_pu + xB2_pu];
     } else {
         available_b2_flag = 0;
         spatialCMVS[4].ref_idx[0] = -1;
@@ -585,7 +586,7 @@ static void derive_spatial_merge_candidates(HEVCContext *s, int x0, int y0, int 
                 l0Cand = mergecandlist[l0CandIdx];
                 l1Cand = mergecandlist[l1CandIdx];
                 if ((l0Cand.pred_flag[0] == 1) && (l1Cand.pred_flag[1] == 1)
-                    && (((DiffPicOrderCnt(s->sh.refPicList[0].list[l0Cand.ref_idx[0]], s->sh.refPicList[1].list[l1Cand.ref_idx[1]])) != 0)
+                    && (((DiffPicOrderCnt(refPicList[0].list[l0Cand.ref_idx[0]], refPicList[1].list[l1Cand.ref_idx[1]])) != 0)
                         || ((l0Cand.mv[0].x != l1Cand.mv[1].x) || (l0Cand.mv[0].y != l1Cand.mv[1].y)))) {
 
                         combCand.ref_idx[0] = l0Cand.ref_idx[0];
@@ -684,381 +685,27 @@ void ff_hevc_luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nP
 }
 
 #define TAB_MVF(x, y)                                                              \
-    s->pu.tab_mvf[(y) * pic_width_in_min_pu + x]
+    tab_mvf[(y) * pic_width_in_min_pu + x]
 
-#define DISTSCALE(mv, x_pu, y_pu, elist)                                                              \
-    td = av_clip_int8_c((DiffPicOrderCnt(s->poc,s->sh.refPicList[elist].list[(TAB_MVF(x_pu, y_pu).ref_idx[elist])])));  \
-    tb = av_clip_int8_c((DiffPicOrderCnt(s->poc,s->sh.refPicList[ref_idx_curr].list[ref_idx])));                \
-    tx = (0x4000 + abs(td/2)) / td;                                                                             \
-    distScaleFactor = av_clip_c((tb * tx + 32) >> 6, -4096, 4095);                                              \
-    mv.x = av_clip_int16_c((distScaleFactor * mv.x + 127 + (distScaleFactor * mv.x < 0)) >> 8);                 \
-    mv.y = av_clip_int16_c((distScaleFactor * mv.y + 127 + (distScaleFactor * mv.y < 0)) >> 8);
-
-void ff_hevc_luma_mv_mvp_mode_l0(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX)
-{
-    int isScaledFlag_L0 = 0;
-    int availableFlagLXA0 = 0;
-    int availableFlagLXB0 = 0;
-    int availableFlagLXCol = 0;
-    int numMVPCandLX  =0;
-    int pic_width_in_min_pu  = s->sps->pic_width_in_min_cbs * 4;
-    int xA0, yA0;
-    int xA0_pu, yA0_pu;
-    int isAvailableA0;
-
-    int xA1, yA1;
-    int xA1_pu, yA1_pu;
-    int isAvailableA1;
-
-    int xB0, yB0;
-    int xB0_pu, yB0_pu;
-    int isAvailableB0;
-
-    int xB1, yB1;
-    int xB1_pu, yB1_pu;
-    int is_available_b1=0;
-
-    int xB2, yB2;
-    int xB2_pu, yB2_pu;
-    int isAvailableB2=0;
-    Mv mvpcand_list[2] = {0};
-    int check_A0, check_A1, check_B0, check_B1, check_B2;
-    Mv mxA = {0};
-    Mv mxB = {0};
-    Mv mvLXCol = {0};
-    int td, tb, tx, distScaleFactor;
-    int ref_idx_curr = 0;
-    int ref_idx = 0;
-
-    if(LX == 0) {
-        ref_idx_curr = 0; //l0
-        ref_idx = mv->ref_idx[0];
-    } else if (LX == 1){
-        ref_idx_curr = 1; // l1
-        ref_idx = mv->ref_idx[1];
-    }
-
-    // left bottom spatial candidate
-    xA0 = x0 - 1;
-    yA0 = y0 + nPbH;
-    xA0_pu = xA0 >> s->sps->log2_min_pu_size;
-    yA0_pu = yA0 >> s->sps->log2_min_pu_size;
-    isAvailableA0 = 0;
-    check_A0 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xA0, yA0, part_idx);
-
-    isAvailableA0 = ((xA0_pu >= 0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && check_A0);
-
-    //left spatial merge candidate
-    xA1 = x0-1;
-    yA1 = y0 + nPbH - 1;
-    xA1_pu = xA1 >> s->sps->log2_min_pu_size;
-    yA1_pu = yA1 >> s->sps->log2_min_pu_size;
-    isAvailableA1 = 0;
-    check_A1 = check_prediction_block_available (s,log2_cb_size, x0, y0, nPbW, nPbH, xA1, yA1, part_idx);
-    isAvailableA1 = ((xA1_pu >= 0) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && check_A1);
-
-    if((isAvailableA0) || (isAvailableA1)) {
-        isScaledFlag_L0 =1;
-    }
-    // XA0 and L0
-    if((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if((TAB_MVF(xA0_pu, yA0_pu).pred_flag[0] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[0];
-        }
-    }
-    // XA0 and L1
-    if((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if((TAB_MVF(xA0_pu, yA0_pu).pred_flag[1] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[1];
-        }
-    }
-    //XA1 and L0
-    if((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0==0)) {
-        if((TAB_MVF(xA1_pu, yA1_pu).pred_flag[0] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[0];
-        }
-    }
-    //XA1 and L1
-    if((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0==0)) {
-        if((TAB_MVF(xA1_pu, yA1_pu).pred_flag[1] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[1].list[TAB_MVF(xA1_pu, yA1_pu).ref_idx[1]], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[1];
-        }
-    }
-
-    // XA0 and L0
-    if((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if((TAB_MVF(xA0_pu, yA0_pu).pred_flag[0]) == 1) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA0_pu, yA0_pu, 0)
-            }
-        }
-    }
-
-    // XA0 and L1
-    if((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if((TAB_MVF(xA0_pu, yA0_pu).pred_flag[1]) == 1) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA0_pu, yA0_pu, 1)
-            }
-        }
-    }
-
-    //XA1 and L0
-    if((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if((TAB_MVF(xA1_pu, yA1_pu).pred_flag[0]) == 1) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[TAB_MVF(xA1_pu, yA1_pu).ref_idx[0]], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA1_pu, yA1_pu, 0)
-            }
-        }
-    }
-
-    //XA1 and L1
-    if((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0==0)) {
-        if((TAB_MVF(xA1_pu, yA1_pu).pred_flag[1]) == 1) {
-            availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA1_pu, yA1_pu, 1)
-            }
-        }
-    }
-
-    // B candidates
-    // above right spatial merge candidate
-    xB0 = x0 + nPbW;
-    yB0 = y0 - 1;
-    xB0_pu = xB0 >> s->sps->log2_min_pu_size;
-    yB0_pu = yB0 >> s->sps->log2_min_pu_size;
-    isAvailableB0 = 0;
-    check_B0 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB0, yB0, part_idx);
-
-    isAvailableB0 = ((yB0_pu >= 0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && check_B0);
-
-    // XB0 and L0
-    if((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB0_pu, yB0_pu).pred_flag[0] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[0];
-        }
-    }
-
-    // XB0 and L1
-    if((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB0_pu, yB0_pu).pred_flag[1] == 1) &&
-           (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-            availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[1];
-        }
-    }
-    if(!availableFlagLXB0) {
-        // above spatial merge candidate
-        xB1 = x0 + nPbW - 1;
-        yB1 = y0 - 1;
-        xB1_pu = xB1 >> s->sps->log2_min_pu_size;
-        yB1_pu = yB1 >> s->sps->log2_min_pu_size;
-        is_available_b1 = 0;
-        check_B1 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB1, yB1, part_idx);
-        if((yB1_pu >= 0) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && check_B1) {
-            is_available_b1 = 1;
-        } else {
-            is_available_b1 = 0;
-        }
-        // XB1 and L0
-        if((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[0] == 1) &&
-               (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-                availableFlagLXB0 =1;
-                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[0];
-            }
-        }
-        // XB1 and L1
-        if((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[1] == 1) &&
-               (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-                availableFlagLXB0 =1;
-                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[1];
-            }
-        }
-    }
-    if(!availableFlagLXB0) {
-        // above left spatial merge candidate
-        xB2 = x0 - 1;
-        yB2 = y0 - 1;
-        xB2_pu = xB2 >> s->sps->log2_min_pu_size;
-        yB2_pu = yB2 >> s->sps->log2_min_pu_size;
-        isAvailableB2 = 0;
-        check_B2 = check_prediction_block_available(s, log2_cb_size, x0, y0, nPbW, nPbH, xB2, yB2, part_idx);
-
-        isAvailableB2 = ((xB2_pu >= 0) && (yB2_pu >= 0) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && check_B2) ;
-
-        // XB2 and L0
-        if((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[0] == 1) &&
-               (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-                availableFlagLXB0 = 1;
-                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[0];
-            }
-        }
-        // XB2 and L1
-        if((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[1] == 1) &&
-               (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
-                availableFlagLXB0 = 1;
-                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[1];
-            }
-        }
-    }
-    if(isScaledFlag_L0 == 0 && availableFlagLXB0) {
-        availableFlagLXA0 = 1;
-        mxA = mxB;
-    }
-    if(isScaledFlag_L0 == 0) {
-        availableFlagLXB0 = 0;
-        mxB.x = 0;
-        mxB.y = 0;
-    }
-
-    // XB0 and L0
-    if((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB0_pu, yB0_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB0_pu, yB0_pu, 0)
-            }
-        }
-    }
-
-    // XB0 and L1
-    if ((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[1] == 1) && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 = 1 ;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB0_pu, yB0_pu, 1)
-            }
-        }
-    }
-
-    // XB1 and L0
-    if ((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB1_pu, yB1_pu, 0)
-            }
-        }
-    }
-
-    // XB1 and L1
-    if((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[1] == 1) && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 =1;
-            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB1_pu, yB1_pu, 1)
-            }
-        }
-    }
-
-
-    // XB2 and L0
-    if((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 =1;
-            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB2_pu, yB2_pu, 0)
-            }
-        }
-    }
-
-    // XB2 and L1
-    if((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[1] == 1)  && (isScaledFlag_L0 == 0)) {
-            availableFlagLXB0 =1;
-            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB2_pu, yB2_pu, 1)
-            }
-        }
-    }
-
-
-
-    if (availableFlagLXA0 && availableFlagLXB0 && ((mxA.x != mxB.x) || (mxA.y != mxB.y))) {
-        availableFlagLXCol = 0 ;
-    } else {
-        //temporal motion vector prediction candidate
-        if(s->sh.slice_temporal_mvp_enabled_flag == 0) {
-            availableFlagLXCol = 0;
-        } else {
-            availableFlagLXCol = temporal_luma_motion_vector(s, x0, y0, nPbW, nPbH, ref_idx, &mvLXCol, LX);
-        }
-    }
-
-    if(availableFlagLXA0) {
-        mvpcand_list[numMVPCandLX] = mxA;
-        numMVPCandLX++;
-    }
-    if(availableFlagLXB0) {
-        mvpcand_list[numMVPCandLX] = mxB;
-        numMVPCandLX++;
-    }
-
-    if(availableFlagLXA0 && availableFlagLXB0 && ((mxA.x == mxB.x) && (mxA.y == mxB.y))) {
-        numMVPCandLX--;
-    }
-
-    if(availableFlagLXCol && numMVPCandLX < 2) {
-        mvpcand_list[numMVPCandLX] = mvLXCol;
-        numMVPCandLX++;
-    }
-
-    while (numMVPCandLX < 2) { // insert zero motion vectors when the number of available candidates are less than 2
-        mvpcand_list[numMVPCandLX].x =0;
-        mvpcand_list[numMVPCandLX].y =0;
-        numMVPCandLX++;
-    }
-
-    if(LX == 0) {
-        mv->mv[0].x  = mvpcand_list[mvp_lx_flag].x;
-        mv->mv[0].y  = mvpcand_list[mvp_lx_flag].y;
-    }
-    if(LX == 1) {
-        mv->mv[1].x  = mvpcand_list[mvp_lx_flag].x;
-        mv->mv[1].y  = mvpcand_list[mvp_lx_flag].y;
+static av_always_inline void dist_scale(HEVCContext *s, Mv * mv, int pic_width_in_min_pu, int x_pu, int y_pu, int elist, int ref_idx_curr, int ref_idx) {
+    int poc_idx = ff_hevc_find_next_ref(s, s->frame, s->poc);
+    RefPicList  *refPicList =  s->short_refs[poc_idx].refPicList;
+    MvField *tab_mvf = s->short_refs[poc_idx].tab_mvf;
+    if((DiffPicOrderCnt(refPicList[elist].list[TAB_MVF(x_pu, y_pu).ref_idx[elist]], refPicList[ref_idx_curr].list[ref_idx]))!=0) {
+        // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
+        int td = av_clip_int8_c((DiffPicOrderCnt(s->poc,refPicList[elist].list[(TAB_MVF(x_pu, y_pu).ref_idx[elist])])));
+        int tb = av_clip_int8_c((DiffPicOrderCnt(s->poc,refPicList[ref_idx_curr].list[ref_idx])));
+        int tx = (0x4000 + abs(td/2)) / td;
+        int distScaleFactor = av_clip_c((tb * tx + 32) >> 6, -4096, 4095);
+        mv->x = av_clip_int16_c((distScaleFactor * mv->x + 127 + (distScaleFactor * mv->x < 0)) >> 8);
+        mv->y = av_clip_int16_c((distScaleFactor * mv->y + 127 + (distScaleFactor * mv->y < 0)) >> 8);
     }
 }
 
-void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX)
+void ff_hevc_luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX)
 {
+    RefPicList  *refPicList =  s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].refPicList;
+    MvField *tab_mvf = s->short_refs[ff_hevc_find_next_ref(s, s->frame, s->poc)].tab_mvf;
     int isScaledFlag_L0 = 0;
     int availableFlagLXA0 = 0;
     int availableFlagLXB0 = 0;
@@ -1084,21 +731,26 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
     int xB2, yB2;
     int xB2_pu, yB2_pu;
     int isAvailableB2 = 0;
-    Mv mvpcand_list[2] = {0};
+    Mv mvpcand_list[2] = { {0} };
     int check_A0, check_A1, check_B0, check_B1, check_B2;
     Mv mxA = {0};
     Mv mxB = {0};
     Mv mvLXCol = {0};
-    int td, tb, tx, distScaleFactor;
     int ref_idx_curr = 0;
     int ref_idx = 0;
+    int pi_L0=0; //pred_flag_index_l0
+    int pi_L1=0; //pred_flag_index_l1
 
     if(LX == 0) {
         ref_idx_curr = 0; //l0
         ref_idx = mv->ref_idx[0];
+        pi_L0=0;
+        pi_L1=1;
     } else if (LX == 1){
         ref_idx_curr = 1; // l1
         ref_idx = mv->ref_idx[1];
+        pi_L0=1;
+        pi_L1=0;
     }
 
     // left bottom spatial candidate
@@ -1127,85 +779,73 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
 
     // XA0 and L1
     if ((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if ((TAB_MVF(xA0_pu, yA0_pu).pred_flag[1] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xA0_pu, yA0_pu).pred_flag[pi_L0] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L0].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[pi_L0])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[1];
+            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[pi_L0];
         }
     }
 
     // XA0 and L0
     if ((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if ((TAB_MVF(xA0_pu, yA0_pu).pred_flag[0] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xA0_pu, yA0_pu).pred_flag[pi_L1] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L1].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[pi_L1])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[0];
+            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[pi_L1];
         }
     }
 
     //XA1 and L1
     if ((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if ((TAB_MVF(xA1_pu, yA1_pu).pred_flag[1] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xA1_pu, yA1_pu).pred_flag[pi_L0] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L0].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[pi_L0])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[1];
+            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[pi_L0];
         }
     }
 
     //XA1 and L0
     if ((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0 == 0)) {
-        if ((TAB_MVF(xA1_pu, yA1_pu).pred_flag[0] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xA1_pu, yA1_pu).pred_flag[pi_L1] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L1].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[pi_L1])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXA0 =1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[0];
+            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[pi_L1];
         }
     }
 
     if ((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
         // XA0 and L1
-        if (TAB_MVF(xA0_pu, yA0_pu).pred_flag[1] == 1) {
+        if (TAB_MVF(xA0_pu, yA0_pu).pred_flag[pi_L0] == 1) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[1];
-            if ((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA0_pu, yA0_pu, 1)
-            }
+            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[pi_L0];
+            dist_scale(s, &mxA, pic_width_in_min_pu, xA0_pu, yA0_pu, pi_L0, ref_idx_curr, ref_idx);
         }
     }
 
     if ((isAvailableA0) && !(TAB_MVF(xA0_pu, yA0_pu).is_intra) && (availableFlagLXA0 == 0)) {
         // XA0 and L0
-        if (TAB_MVF(xA0_pu, yA0_pu).pred_flag[0] == 1) {
+        if (TAB_MVF(xA0_pu, yA0_pu).pred_flag[pi_L1] == 1) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[0];
-            if ((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA0_pu, yA0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA0_pu, yA0_pu, 0)
-            }
+            mxA = TAB_MVF(xA0_pu, yA0_pu).mv[pi_L1];
+            dist_scale(s, &mxA, pic_width_in_min_pu, xA0_pu, yA0_pu, pi_L1, ref_idx_curr, ref_idx);
         }
     }
 
     if ((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0 == 0)) {
         //XA1 and L1
-        if (TAB_MVF(xA1_pu, yA1_pu).pred_flag[1] == 1) {
+        if (TAB_MVF(xA1_pu, yA1_pu).pred_flag[pi_L0] == 1) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[1];
-            if ((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA1_pu, yA1_pu, 1)
-            }
+            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[pi_L0];
+            dist_scale(s, &mxA, pic_width_in_min_pu, xA1_pu, yA1_pu, pi_L0, ref_idx_curr, ref_idx);
         }
     }
 
     if ((isAvailableA1) && !(TAB_MVF(xA1_pu, yA1_pu).is_intra) && (availableFlagLXA0 == 0)) {
         //XA1 and L0
-        if (TAB_MVF(xA1_pu, yA1_pu).pred_flag[0] == 1) {
+        if (TAB_MVF(xA1_pu, yA1_pu).pred_flag[pi_L1] == 1) {
             availableFlagLXA0 = 1;
-            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xA1_pu, yA1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxA, xA1_pu, yA1_pu, 0)
-            }
+            mxA = TAB_MVF(xA1_pu, yA1_pu).mv[pi_L1];
+            dist_scale(s, &mxA, pic_width_in_min_pu, xA1_pu, yA1_pu, pi_L1, ref_idx_curr, ref_idx);
         }
     }
 
@@ -1222,19 +862,19 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
 
     // XB0 and L1
     if ((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[1] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[1].list[TAB_MVF(xB0_pu, yB0_pu).ref_idx[1]], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[pi_L0] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L0].list[TAB_MVF(xB0_pu, yB0_pu).ref_idx[pi_L0]], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[1];
+            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[pi_L0];
         }
     }
 
     // XB0 and L0
     if ((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[0] == 1) &&
-            (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[pi_L1] == 1) &&
+            (DiffPicOrderCnt(refPicList[pi_L1].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[pi_L1])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[0];
+            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[pi_L1];
         }
     }
 
@@ -1251,18 +891,18 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
         // XB1 and L1
         if ((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
             // XB1 and L1
-            if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[1] == 1) &&
-                (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+            if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[pi_L0] == 1) &&
+                (DiffPicOrderCnt(refPicList[pi_L0].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[pi_L0])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
                 availableFlagLXB0 =1;
-                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[1];
+                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[pi_L0];
             }
         }
         // XB1 and L0
         if ((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[0] == 1) &&
-                (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) == 0) {
+            if ((TAB_MVF(xB1_pu, yB1_pu).pred_flag[pi_L1] == 1) &&
+                (DiffPicOrderCnt(refPicList[pi_L1].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[pi_L1])], refPicList[ref_idx_curr].list[ref_idx])) == 0) {
                 availableFlagLXB0 = 1;
-                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[0];
+                mxB = TAB_MVF(xB1_pu, yB1_pu).mv[pi_L1];
             }
         }
     }
@@ -1280,19 +920,19 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
 
         // XB2 and L1
         if ((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[1] == 1) &&
-                (DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))== 0) {
+            if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[pi_L0] == 1) &&
+                (DiffPicOrderCnt(refPicList[pi_L0].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[pi_L0])], refPicList[ref_idx_curr].list[ref_idx]))== 0) {
                 availableFlagLXB0 = 1;
-                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[1];
+                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[pi_L0];
             }
         }
 
         // XB2 and L0
         if ((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
-            if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[0] == 1) &&
-               (DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))==0) {
+            if((TAB_MVF(xB2_pu, yB2_pu).pred_flag[pi_L1] == 1) &&
+               (DiffPicOrderCnt(refPicList[pi_L1].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[pi_L1])], refPicList[ref_idx_curr].list[ref_idx]))==0) {
                 availableFlagLXB0 =1;
-                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[0];
+                mxB = TAB_MVF(xB2_pu, yB2_pu).mv[pi_L1];
             }
         }
     }
@@ -1306,74 +946,56 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
 
     // XB0 and L1
     if ((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[1] == 1) && (isScaledFlag_L0 == 0)) {
+        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[pi_L0] == 1) && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 =1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB0_pu, yB0_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB0_pu, yB0_pu, 1)
-            }
+            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[pi_L0];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB0_pu, yB0_pu, pi_L0, ref_idx_curr, ref_idx);
         }
     }
     // XB0 and L0
     if ((isAvailableB0) && !(TAB_MVF(xB0_pu, yB0_pu).is_intra) && (availableFlagLXB0 == 0)) {
-        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
+        if ((TAB_MVF(xB0_pu, yB0_pu).pred_flag[pi_L1] == 1) && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[0];
-            if ((DiffPicOrderCnt(s->sh.refPicList[0].list[TAB_MVF(xB0_pu, yB0_pu).ref_idx[0]], s->sh.refPicList[ref_idx_curr].list[ref_idx]))!=0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB0_pu, yB0_pu, 0)
-            }
+            mxB = TAB_MVF(xB0_pu, yB0_pu).mv[pi_L1];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB0_pu, yB0_pu, pi_L1, ref_idx_curr, ref_idx);
         }
     }
 
 
     if ((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
         // XB1 and L1
-        if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[1] == 1) && (isScaledFlag_L0 == 0)) {
+        if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[pi_L0] == 1) && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 =1;
-            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[1];
-            if((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB1_pu, yB1_pu, 1)
-            }
+            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[pi_L0];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB1_pu, yB1_pu, pi_L0, ref_idx_curr, ref_idx);
         }
     }
 
     if ((is_available_b1) && !(TAB_MVF(xB1_pu, yB1_pu).is_intra) && (availableFlagLXB0 == 0)) {
         // XB1 and L0
-        if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
+        if((TAB_MVF(xB1_pu, yB1_pu).pred_flag[pi_L1] == 1) && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB1_pu, yB1_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB1_pu, yB1_pu, 0)
-            }
+            mxB = TAB_MVF(xB1_pu, yB1_pu).mv[pi_L1];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB1_pu, yB1_pu, pi_L1, ref_idx_curr, ref_idx);
         }
     }
 
 
     if ((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
         // XB2 and L1
-        if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[1] == 1)  && (isScaledFlag_L0 == 0)) {
+        if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[pi_L0] == 1)  && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[1];
-            if ((DiffPicOrderCnt(s->sh.refPicList[1].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[1])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB2_pu, yB2_pu, 1)
-            }
+            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[pi_L0];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB2_pu, yB2_pu, pi_L0, ref_idx_curr, ref_idx);
         }
     }
 
     if ((isAvailableB2) && !(TAB_MVF(xB2_pu, yB2_pu).is_intra) && (availableFlagLXB0 == 0)) {
         // XB2 and L0
-        if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[0] == 1) && (isScaledFlag_L0 == 0)) {
+        if ((TAB_MVF(xB2_pu, yB2_pu).pred_flag[pi_L1] == 1) && (isScaledFlag_L0 == 0)) {
             availableFlagLXB0 = 1;
-            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[0];
-            if((DiffPicOrderCnt(s->sh.refPicList[0].list[(TAB_MVF(xB2_pu, yB2_pu).ref_idx[0])], s->sh.refPicList[ref_idx_curr].list[ref_idx])) != 0) {
-                // *** Assuming there are no long term pictures in version 1 of the decoder and the pictures are short term pictures ***
-                DISTSCALE(mxB, xB2_pu, yB2_pu, 0)
-            }
+            mxB = TAB_MVF(xB2_pu, yB2_pu).mv[pi_L1];
+            dist_scale(s, &mxB, pic_width_in_min_pu, xB2_pu, yB2_pu, pi_L1, ref_idx_curr, ref_idx);
         }
     }
 
@@ -1406,7 +1028,6 @@ void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int n
         mvpcand_list[numMVPCandLX] = mvLXCol;
         numMVPCandLX++;
     }
-
 
     while (numMVPCandLX < 2) { // insert zero motion vectors when the number of available candidates are less than 2
         mvpcand_list[numMVPCandLX].x = 0;

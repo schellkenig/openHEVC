@@ -415,7 +415,6 @@ typedef struct SliceHeader {
     int pic_order_cnt_lsb;
     ShortTermRPS *short_term_rps;
     RefPicList refPocList[5];
-    RefPicList refPicList[2];
 
     uint8_t no_output_of_prior_pics_flag;
 
@@ -614,7 +613,6 @@ typedef struct PredictionUnit {
     uint8_t *left_ipm;
 
     Mv mvd;
-    MvField *tab_mvf;
 } PredictionUnit;
 
 typedef struct TransformTree {
@@ -802,7 +800,6 @@ int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int n, int base_level);
 int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb);
 
 void ff_hevc_luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv);
-void ff_hevc_luma_mv_mvp_mode_l0(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX);
-void ff_hevc_luma_mv_mvp_mode_l1(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX);
+void ff_hevc_luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX);
 
 #endif // AVCODEC_HEVC_H
