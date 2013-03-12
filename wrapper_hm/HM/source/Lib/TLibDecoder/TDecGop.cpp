@@ -177,14 +177,14 @@ Void TDecGop::filterPicture(TComPic*& rpcPic)
   // deblocking filter
   Bool bLFCrossTileBoundary = pcSlice->getPPS()->getLoopFilterAcrossTilesEnabledFlag();
   m_pcLoopFilter->setCfg(bLFCrossTileBoundary);
-  m_pcLoopFilter->loopFilterPic( rpcPic );
+//  m_pcLoopFilter->loopFilterPic( rpcPic );
 
   if(pcSlice->getSPS()->getUseSAO())
   {
     m_sliceStartCUAddress.push_back(rpcPic->getNumCUsInFrame()* rpcPic->getNumPartInCU());
     rpcPic->createNonDBFilterInfo(m_sliceStartCUAddress, 0, &m_LFCrossSliceBoundaryFlag, rpcPic->getPicSym()->getNumTiles(), bLFCrossTileBoundary);
   }
-
+/*
   if( pcSlice->getSPS()->getUseSAO() )
   {
     {
@@ -198,7 +198,7 @@ Void TDecGop::filterPicture(TComPic*& rpcPic)
       m_pcSAO->destroyPicSaoInfo();
     }
   }
-
+*/
   if(pcSlice->getSPS()->getUseSAO())
   {
     rpcPic->destroyNonDBFilterInfo();
