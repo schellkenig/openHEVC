@@ -590,11 +590,9 @@ typedef struct Mv {
 
 typedef struct MvField {
       Mv  mv[2];
-      int ref_idx[2];
-      int pred_flag[2];
-      int is_intra;
-      int cbf_luma; // cbf_luma of colocated TU
-      int is_pcm;
+      int8_t ref_idx[2];
+      int8_t pred_flag[2];
+      uint8_t is_intra;
 } MvField;
 
 // MERGE
@@ -723,6 +721,10 @@ typedef struct HEVCContext {
     ResidualCoding rc;
     int poc;
 
+    uint8_t *cbf_luma; // cbf_luma of colocated TU
+    uint8_t *is_pcm;
+
+    HEVCFrame *ref;
     HEVCFrame short_refs[16];
     int decode_checksum_sei;
     uint8_t md5[3][16];
