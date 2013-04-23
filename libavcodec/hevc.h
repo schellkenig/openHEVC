@@ -528,24 +528,24 @@ enum InterPredIdc {
 };
 
 typedef struct CodingTree {
-    int depth; ///< ctDepth
+    int depth[MAX_ENTRIES]; ///< ctDepth
 } CodingTree;
 
 typedef struct CodingUnit {
-    uint8_t cu_transquant_bypass_flag;
+    uint8_t cu_transquant_bypass_flag[MAX_ENTRIES ];
     uint8_t *skip_flag;
-    enum PredMode pred_mode; ///< PredMode
-    enum PartMode part_mode; ///< PartMode
-    uint8_t rqt_root_cbf;
+    enum PredMode pred_mode[MAX_ENTRIES ]; ///< PredMode
+    enum PartMode part_mode[MAX_ENTRIES ]; ///< PartMode
+    uint8_t rqt_root_cbf[MAX_ENTRIES ];
 
-    uint8_t pcm_flag;
+    uint8_t pcm_flag[MAX_ENTRIES ];
 
     // Inferred parameters
-    uint8_t intra_split_flag; ///< IntraSplitFlag
-    uint8_t max_trafo_depth; ///< MaxTrafoDepth
+    uint8_t intra_split_flag[MAX_ENTRIES ]; ///< IntraSplitFlag
+    uint8_t max_trafo_depth[MAX_ENTRIES ]; ///< MaxTrafoDepth
 
-    int x;
-    int y;
+    int x[MAX_ENTRIES ];
+    int y[MAX_ENTRIES ];
     uint8_t *top_ct_depth;
     uint8_t *left_ct_depth;
 } CodingUnit;
@@ -604,18 +604,18 @@ typedef struct MvField {
 #define MRG_MAX_NUM_CANDS     5
 
 typedef struct PredictionUnit {
-    uint8_t merge_flag;
+    uint8_t merge_flag[MAX_ENTRIES ];
 
-    int mpm_idx;
-    int rem_intra_luma_pred_mode;
+    int mpm_idx[MAX_ENTRIES ];
+    int rem_intra_luma_pred_mode[MAX_ENTRIES ];
 
-    uint8_t intra_pred_mode[4];
-    uint8_t intra_pred_mode_c;
+    uint8_t intra_pred_mode[MAX_ENTRIES ][4];
+    uint8_t intra_pred_mode_c[MAX_ENTRIES ];
 
     uint8_t *top_ipm;
     uint8_t *left_ipm;
 
-    Mv mvd;
+    Mv mvd[MAX_ENTRIES];
 } PredictionUnit;
 
 typedef struct TransformTree {
@@ -681,7 +681,9 @@ typedef struct HEVCContext {
     AVFrame *frame;
     AVFrame *sao_frame;
     AVFrame *tmp_frame;
-
+    
+    uint8_t * deblocking_save[3][2];
+    
     HEVCPredContext hpc;
     HEVCDSPContext hevcdsp;
     VideoDSPContext vdsp;
@@ -718,14 +720,14 @@ typedef struct HEVCContext {
     int bs_width;
     int bs_height;
 
-    uint8_t *edge_emu_buffer;
+    uint8_t *edge_emu_buffer[MAX_ENTRIES ];
 
     CodingTree ct;
     CodingUnit cu;
     PredictionUnit pu;
-    TransformTree tt;
-    TransformUnit tu;
-    ResidualCoding rc;
+    TransformTree tt[MAX_ENTRIES ];
+    TransformUnit tu[MAX_ENTRIES ];
+    ResidualCoding rc[MAX_ENTRIES ];
     int poc;
     int poc_display;
 
@@ -810,7 +812,7 @@ int ff_hevc_coeff_abs_level_greater2_flag_decode(HEVCContext *s, int c_idx,
 int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int n, int base_level, int entry);
 int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb, int entry);
 
-void ff_hevc_luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv);
-void ff_hevc_luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX);
+void ff_hevc_luma_mv_merge_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv, int entry);
+void ff_hevc_luma_mv_mvp_mode(HEVCContext *s, int x0, int y0, int nPbW, int nPbH, int log2_cb_size, int part_idx, int merge_idx, MvField *mv , int mvp_lx_flag, int LX, int entry);
 
 #endif // AVCODEC_HEVC_H

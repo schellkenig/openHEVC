@@ -349,9 +349,9 @@ int ff_hevc_sao_type_idx_decode(HEVCContext *s, int entry)
 
 int ff_hevc_sao_band_position_decode(HEVCContext *s, int entry)
 {
+    
     int i;
     int value = get_cabac_bypass(s->cc[entry]);
-
     for (i = 0; i < 4; i++)
         value = (value << 1) | get_cabac_bypass(s->cc[entry]);
     return value;
@@ -361,7 +361,6 @@ int ff_hevc_sao_offset_abs_decode(HEVCContext *s, int entry)
 {
     int i = 0;
     int length = (1 << (FFMIN(s->sps->bit_depth, 10) - 5)) - 1;
-
     while (i < length && get_cabac_bypass(s->cc[entry]))
         i++;
     return i;
@@ -391,7 +390,6 @@ int ff_hevc_cu_transquant_bypass_flag_decode(HEVCContext *s, int entry)
 int ff_hevc_skip_flag_decode(HEVCContext *s, int x_cb, int y_cb, int entry)
 {
     int inc = 0;
-
     if (x_cb > 0)
         inc = SAMPLE(s->cu.skip_flag, x_cb-1, y_cb);
     if (y_cb > 0)
@@ -406,7 +404,6 @@ int ff_hevc_pred_mode_decode(HEVCContext *s, int entry)
 int ff_hevc_split_coding_unit_flag_decode(HEVCContext *s, int ct_depth, int x0, int y0, int entry)
 {
     int inc = 0, depth_left = 0, depth_top = 0;
-
     if (x0 > 0)
         depth_left = s->cu.left_ct_depth[y0 >> s->sps->log2_min_coding_block_size];
     if (y0 > 0)
@@ -426,7 +423,7 @@ int ff_hevc_part_mode_decode(HEVCContext *s, int log2_cb_size, int entry)
     if (GET_CABAC(entry, elem_offset[PART_MODE])) // 1
         return PART_2Nx2N;
     if (log2_cb_size == s->sps->log2_min_coding_block_size) {
-        if (s->cu.pred_mode == MODE_INTRA) // 0
+        if (s->cu.pred_mode[entry] == MODE_INTRA) // 0
             return PART_NxN;
         if (GET_CABAC(entry, elem_offset[PART_MODE] + 1)) // 01
             return PART_2NxN;
@@ -480,7 +477,6 @@ int ff_hevc_rem_intra_luma_pred_mode_decode(HEVCContext *s, int entry)
 {
     int i;
     int value = get_cabac_bypass(s->cc[entry]);
-
     for (i = 0; i < 4; i++)
         value = (value << 1) | get_cabac_bypass(s->cc[entry]);
     return value;
@@ -498,7 +494,6 @@ int ff_hevc_intra_chroma_pred_mode_decode(HEVCContext *s, int entry)
 int ff_hevc_merge_idx_decode(HEVCContext *s, int entry)
 {
     int i = GET_CABAC(entry, elem_offset[MERGE_IDX]);
-
     if (i != 0) {
         while (i < s->sh.max_num_merge_cand-1 && get_cabac_bypass(s->cc[entry]))
             i++;
@@ -515,7 +510,7 @@ int ff_hevc_inter_pred_idc_decode(HEVCContext *s, int nPbW, int nPbH, int entry)
 {
     if (nPbW + nPbH == 12)
         return GET_CABAC(entry, elem_offset[INTER_PRED_IDC] + 4);
-    if (GET_CABAC(entry, elem_offset[INTER_PRED_IDC] + s->ct.depth))
+    if (GET_CABAC(entry, elem_offset[INTER_PRED_IDC] + s->ct.depth[entry]))
         return PRED_BI;
 
     return GET_CABAC(entry, elem_offset[INTER_PRED_IDC] + 4);
@@ -526,7 +521,6 @@ int ff_hevc_ref_idx_lx_decode(HEVCContext *s, int num_ref_idx_lx, int entry)
     int i = 0;
     int max = num_ref_idx_lx - 1;
     int max_ctx = FFMIN(max, 2);
-    
     while (i < max_ctx && GET_CABAC(entry, elem_offset[REF_IDX_L0] + i))
         i++;
     if (i==2) {
@@ -560,7 +554,6 @@ int ff_hevc_abs_mvd_minus2_decode(HEVCContext *s, int entry)
 {
     int ret = 0;
     int k = 1;
-
     while (get_cabac_bypass(s->cc[entry])) {
         ret += 1 << k;
         k++;
@@ -631,7 +624,6 @@ int ff_hevc_last_significant_coeff_suffix_decode(HEVCContext *s,
     int i;
     int length = (last_significant_coeff_prefix >> 1) - 1;
     int value = get_cabac_bypass(s->cc[entry]);
-
     for (i = 1; i < length; i++)
         value = (value << 1) | get_cabac_bypass(s->cc[entry]);
     return value;
@@ -642,11 +634,10 @@ int ff_hevc_significant_coeff_group_flag_decode(HEVCContext *s, int c_idx, int x
 {
     int ctx_cg = 0;
     int inc;
-
     if (x_cg < (1 << (log2_trafo_size - 2)) - 1)
-        ctx_cg += s->rc.significant_coeff_group_flag[x_cg + 1][y_cg];
+        ctx_cg += s->rc[entry].significant_coeff_group_flag[x_cg + 1][y_cg];
     if (y_cg < (1 << (log2_trafo_size - 2)) - 1)
-        ctx_cg += s->rc.significant_coeff_group_flag[x_cg][y_cg + 1];
+        ctx_cg += s->rc[entry].significant_coeff_group_flag[x_cg][y_cg + 1];
 
     inc = FFMIN(ctx_cg, 1) + (c_idx>0 ? 2 : 0);
 
@@ -663,7 +654,6 @@ int ff_hevc_significant_coeff_flag_decode(HEVCContext *s, int c_idx, int x_c, in
     int y_cg = y_c >> 2;
     int sig_ctx;
     int inc;
-
     if (x_c + y_c == 0) {
         sig_ctx = 0;
     } else if (log2_trafo_size == 2) {
@@ -672,9 +662,9 @@ int ff_hevc_significant_coeff_flag_decode(HEVCContext *s, int c_idx, int x_c, in
         int prev_sig = 0;
 
         if (x_cg < ((1 << log2_trafo_size) - 1) >> 2)
-            prev_sig += s->rc.significant_coeff_group_flag[x_cg + 1][y_cg];
+            prev_sig += s->rc[entry].significant_coeff_group_flag[x_cg + 1][y_cg];
         if (y_cg < ((1 << log2_trafo_size) - 1) >> 2)
-            prev_sig += (s->rc.significant_coeff_group_flag[x_cg][y_cg + 1] << 1);
+            prev_sig += (s->rc[entry].significant_coeff_group_flag[x_cg][y_cg + 1] << 1);
         av_dlog(s->avctx, "prev_sig: %d\n", prev_sig);
 
         switch (prev_sig) {
@@ -713,48 +703,45 @@ int ff_hevc_significant_coeff_flag_decode(HEVCContext *s, int c_idx, int x_c, in
     return GET_CABAC(entry, elem_offset[SIGNIFICANT_COEFF_FLAG] + inc);
 }
 
-static int ctx_set = 0;
+static int ctx_set[MAX_ENTRIES] = {0};
 
 int ff_hevc_coeff_abs_level_greater1_flag_decode(HEVCContext *s, int c_idx,
                                                  int i, int n,
                                                  int first_elem,
                                                  int first_subset, int entry)
 {
-    static int greater1_ctx = 0;
-    static int last_coeff_abs_level_greater1_flag = 0;
+    static int greater1_ctx[MAX_ENTRIES] = {0};
+    static int last_coeff_abs_level_greater1_flag[MAX_ENTRIES] = {0};
 
     int inc;
-
     if (first_elem) {
-        ctx_set = (i > 0 && c_idx == 0) ? 2 : 0;
+        ctx_set[entry] = (i > 0 && c_idx == 0) ? 2 : 0;
 
-        if (!first_subset && greater1_ctx == 0)
-            ctx_set++;
-        greater1_ctx = 1;
+        if (!first_subset && greater1_ctx[entry] == 0)
+            ctx_set[entry]++;
+        greater1_ctx[entry] = 1;
     }
-
-    inc = (ctx_set << 2) + greater1_ctx;
+    inc = (ctx_set[entry] << 2) + greater1_ctx[entry];
     if (c_idx > 0)
         inc += 16;
 
-    last_coeff_abs_level_greater1_flag =
+    last_coeff_abs_level_greater1_flag[entry] =
         GET_CABAC(entry, elem_offset[COEFF_ABS_LEVEL_GREATER1_FLAG] + inc);
 
-    if (last_coeff_abs_level_greater1_flag) {
-        greater1_ctx = 0;
-    } else if (greater1_ctx > 0 && greater1_ctx < 3) {
-        greater1_ctx++;
+    if (last_coeff_abs_level_greater1_flag[entry]) {
+        greater1_ctx[entry] = 0;
+    } else if (greater1_ctx[entry] > 0 && greater1_ctx[entry] < 3) {
+        greater1_ctx[entry]++;
     }
 
-    return last_coeff_abs_level_greater1_flag;
+    return last_coeff_abs_level_greater1_flag[entry];
 }
 
 int ff_hevc_coeff_abs_level_greater2_flag_decode(HEVCContext *s, int c_idx,
                                                  int i, int n, int entry)
 {
     int inc;
-
-    inc = ctx_set;
+    inc = ctx_set[entry];
     if (c_idx > 0)
         inc += 4;
 
@@ -764,13 +751,12 @@ int ff_hevc_coeff_abs_level_greater2_flag_decode(HEVCContext *s, int c_idx,
 int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int first_elem, int base_level, int entry)
 {
     int i;
-    static int c_rice_param, last_coeff_abs_level_remaining;
+    static int c_rice_param[MAX_ENTRIES], last_coeff_abs_level_remaining[MAX_ENTRIES];
     int prefix = 0;
     int suffix = 0;
-
     if (first_elem) {
-        c_rice_param = 0;
-        last_coeff_abs_level_remaining = 0;
+        c_rice_param[entry] = 0;
+        last_coeff_abs_level_remaining[entry] = 0;
         av_dlog(s->avctx,
                "c_rice_param reset to 0\n");
     }
@@ -779,41 +765,40 @@ int ff_hevc_coeff_abs_level_remaining(HEVCContext *s, int first_elem, int base_l
         prefix++;
 
     if (prefix < 3) {
-        for (i = 0; i < c_rice_param; i++)
+        for (i = 0; i < c_rice_param[entry]; i++)
             suffix = (suffix << 1) | get_cabac_bypass(s->cc[entry]);
-        last_coeff_abs_level_remaining = (prefix << c_rice_param) + suffix;
+        last_coeff_abs_level_remaining[entry] = (prefix << c_rice_param[entry]) + suffix;
     } else {
-        for (i = 0; i < prefix - 3 + c_rice_param; i++)
+        for (i = 0; i < prefix - 3 + c_rice_param[entry]; i++)
             suffix = (suffix << 1) | get_cabac_bypass(s->cc[entry]);
-        last_coeff_abs_level_remaining = (((1 << (prefix - 3)) + 3 - 1)
-                                          << c_rice_param) + suffix;
+        last_coeff_abs_level_remaining[entry] = (((1 << (prefix - 3)) + 3 - 1)
+                                          << c_rice_param[entry]) + suffix;
     }
 
     av_dlog(s->avctx,
-           "coeff_abs_level_remaining c_rice_param: %d\n", c_rice_param);
+           "coeff_abs_level_remaining c_rice_param: %d\n", c_rice_param[entry]);
     av_dlog(s->avctx,
            "coeff_abs_level_remaining base_level: %d, prefix: %d, suffix: %d\n",
            base_level, prefix, suffix);
     av_dlog(s->avctx,
            "coeff_abs_level_remaining: %d\n",
-           last_coeff_abs_level_remaining);
+           last_coeff_abs_level_remaining[entry]);
 
-    av_dlog(s->avctx, "last_coeff_(%d) > %d\n", base_level + last_coeff_abs_level_remaining, 3*(1<<(c_rice_param)));
+    av_dlog(s->avctx, "last_coeff_(%d) > %d\n", base_level + last_coeff_abs_level_remaining[entry], 3*(1<<(c_rice_param[entry])));
 
-    c_rice_param = FFMIN(c_rice_param +
-                         ((base_level + last_coeff_abs_level_remaining) >
-                          (3 * (1 << c_rice_param))), 4);
+    c_rice_param[entry] = FFMIN(c_rice_param[entry] +
+                         ((base_level + last_coeff_abs_level_remaining[entry]) >
+                          (3 * (1 << c_rice_param[entry]))), 4);
     av_dlog(s->avctx,
-           "new c_rice_param: %d\n", c_rice_param);
+           "new c_rice_param: %d\n", c_rice_param[entry]);
 
-    return last_coeff_abs_level_remaining;
+    return last_coeff_abs_level_remaining[entry];
 }
 
 int ff_hevc_coeff_sign_flag(HEVCContext *s, uint8_t nb, int entry)
 {
     int i;
     int ret = 0;
-
     for (i = 0; i < nb; i++)
         ret = (ret << 1) | get_cabac_bypass(s->cc[entry]);
     return ret;
