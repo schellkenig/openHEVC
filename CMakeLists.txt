@@ -22,7 +22,7 @@ endif(MINGW)
 ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
 
 find_package(SDL)
-find_package(SDL2)
+#find_package(SDL2)
 
 set(libfilenames
 openHevcWrapper.c
